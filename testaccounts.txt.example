@@ -1,0 +1,9 @@
+# Example testaccounts.txt file
+# This file contains all test accounts used by analysis.py.
+
+# this account is the spider - it sits in the middle of the web. All strings
+# join here.
+addr=1@testrun.org mail_pw=s3cr3t spider=true
+
+addr=2@testrun.org mail_pw=p4ssw0rd
+addr=3@delta.blinzeln.de mail_pw=p1nc0de mail_server=webbox222.server-home.org send_server=webbox222.server-home.org
