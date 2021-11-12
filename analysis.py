@@ -50,9 +50,39 @@ class EchoPlugin:
             message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
 
 
-def setup_account(entry: dict, data_dir: str, plugin: object) -> deltachat.Account:
+class Output:
+    def __init__(self, outputfile):
+        self.outputfile = outputfile
+        self.accounts = []
+        self.logins = {}
+        self.sending = {}
+        self.receiving = {}
+
+    def submit_login_result(self, addr, duration):
+        self.accounts.append(addr)
+        self.logins[addr] = duration
+
+    def write(self):
+        print("domains:", end=" ")
+        for addr in self.accounts:
+            print(addr.split("@")[1], end=", ")
+        print()
+
+        print("addresses:", end=" ")
+        for addr in self.accounts:
+            print(addr, end=", ")
+        print()
+
+
+        # create output file? overwrite?
+        # only write the results at the end of the test
+        # print test results nicely during test
+        # 
+
+def setup_account(output: object, entry: dict, data_dir: str, plugin: object) -> deltachat.Account:
     """Creates a Delta Chat account for a given credentials dictionary.
 
+    :param output: the Output object which takes care of the results
     :param data_dir: the directory where the accounts the argparse arguments
         passed to this script
     :param entry: a dictionary with at least an "addr" and a "mail_pw" key
@@ -85,6 +115,7 @@ def setup_account(entry: dict, data_dir: str, plugin: object) -> deltachat.Accou
     ac.start_io()
     duration = time.time() - begin
     print("%s: Successful login as %s in %.1f seconds." % (entry["addr"], plugin.name, duration))
+    output.submit_login_result(entry.get("addr"), duration)
     return ac
 
 
@@ -168,7 +199,9 @@ def main():
                         default="testaccounts.txt")
     parser.add_argument("-t", "--timeout", type=int, default=1500,
                         help="seconds after which tests are aborted")
+    parser.add_argument("-o", "--output", type=str, default="results.csv")
     args = parser.parse_args()
+    output = Output(args.output)
 
     credentials, spider = parse_accounts_file(args.accounts_file)
     assert spider is not None, "tests need a spider echobot account to run"
@@ -179,11 +212,11 @@ def main():
         os.mkdir(args.data_dir)
 
     # setup spider and test accounts
-    spac = setup_account(spider, args.data_dir, EchoPlugin)
+    spac = setup_account(output, spider, args.data_dir, EchoPlugin)
     accounts = []
     for entry in credentials:
         try:
-            accounts.append(setup_account(entry, args.data_dir, ReceivePlugin))
+            accounts.append(setup_account(output, entry, args.data_dir, ReceivePlugin))
         except deltachat.tracker.ConfigureFailed:
             print("Login failed for %s with password:\n%s" %
                     (entry["addr"], entry["mail_pw"]))
@@ -211,6 +244,7 @@ def main():
     if spider is not None:
         spac.shutdown()
         spac.wait_shutdown()
+    output.write()
 
 
 if __name__ == "__main__":
