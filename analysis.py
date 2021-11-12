@@ -162,9 +162,10 @@ def parse_accounts_file(accounts_file: str) -> Tuple[list, dict]:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", help="directory for the account data",
+    parser.add_argument("-d", "--data_dir", help="directory for the account data",
                         default="/tmp/" + "".join(random.choices("abcdef",k=5)))
-    parser.add_argument("accounts_file", help="a file containing mail accounts")
+    parser.add_argument("-a", "--accounts_file", help="a file containing mail accounts",
+                        default="testaccounts.txt")
     parser.add_argument("-t", "--timeout", type=int, default=1500,
                         help="seconds after which tests are aborted")
     args = parser.parse_args()

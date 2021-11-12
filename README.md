@@ -19,6 +19,6 @@ accounts.
 python3 -m venv venv
 . venv/bin/activate
 pip install deltachat
-./analysis.py testaccounts.txt
+./analysis.py
 ```
 
