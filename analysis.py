@@ -99,10 +99,10 @@ def setup_account(output: object, entry: dict, data_dir: str, plugin: object) ->
     :param output: the Output object which takes care of the results
     :param data_dir: the directory where the accounts the argparse arguments
         passed to this script
-    :param entry: a dictionary with at least an "addr" and a "mail_pw" key
+    :param entry: a dictionary with at least an "addr" and a "app_pw" key
     :param plugin: a plugin class which the bot will use
     """
-    assert entry.get("addr") and entry.get("mail_pw")
+    assert entry.get("addr") and entry.get("app_pw")
 
     begin = time.time()
     # create deltachat.Account
@@ -113,7 +113,7 @@ def setup_account(output: object, entry: dict, data_dir: str, plugin: object) ->
     #ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
     ac.add_account_plugin(plugin)
     ac.set_config("addr", entry["addr"])
-    ac.set_config("mail_pw", entry["mail_pw"])
+    ac.set_config("mail_pw", entry["app_pw"])
 
     for name in ("send_server", "mail_server"):
         val = entry.get(name)
@@ -235,9 +235,9 @@ def main():
             accounts.append(setup_account(output, entry, args.data_dir, ReceivePlugin))
         except deltachat.tracker.ConfigureFailed:
             print("Login failed for %s with password:\n%s" %
-                    (entry["addr"], entry["mail_pw"]))
+                    (entry["addr"], entry["app_pw"]))
         except AssertionError:
-            print("this line doesn't contain valid addr and mail_pw: %s" %
+            print("this line doesn't contain valid addr and app_pw: %s" %
                     (entry["line"],))
 
     # send test messages to spider
