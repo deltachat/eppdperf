@@ -28,6 +28,7 @@ class ReceivePlugin:
         secondtravel = received - msgcontent.get("begin")
         print("%s: test message took %.1f seconds to %s and %.1f seconds back." %
               (receiver, firsttravel, sender, secondtravel))
+        message.account.output.submit_1on1_results(receiver, firsttravel, secondtravel)
         message.account.shutdown()
 
 
@@ -62,6 +63,10 @@ class Output:
         self.accounts.append(addr)
         self.logins[addr] = duration
 
+    def submit_1on1_results(self, addr, sendduration, recvduration):
+        self.sending[addr] = sendduration
+        self.receiving[addr] = recvduration
+
     def write(self):
         print("domains:", end=" ")
         for addr in self.accounts:
@@ -73,6 +78,15 @@ class Output:
             print(addr, end=", ")
         print()
 
+        print("sending:", end=" ")
+        for addr in self.accounts:
+            print(self.sending[addr], end=" ")
+        print()
+
+        print("receiving:", end=" ")
+        for addr in self.accounts:
+            print(self.receiving[addr], end=" ")
+        print()
 
         # create output file? overwrite?
         # only write the results at the end of the test
@@ -115,7 +129,9 @@ def setup_account(output: object, entry: dict, data_dir: str, plugin: object) ->
     ac.start_io()
     duration = time.time() - begin
     print("%s: Successful login as %s in %.1f seconds." % (entry["addr"], plugin.name, duration))
-    output.submit_login_result(entry.get("addr"), duration)
+    if plugin is not EchoPlugin:
+        output.submit_login_result(entry.get("addr"), duration)
+    ac.output = output
     return ac
 
 
