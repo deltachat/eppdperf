@@ -68,25 +68,35 @@ class Output:
         self.receiving[addr] = recvduration
 
     def write(self):
-        print("domains:", end=" ")
+        try:
+            f = open(self.outputfile, "x", encoding="utf-8")
+        except FileExistsError:
+            if input(self.outputfile + " already exists. Do you want to delete it? [Y/n]").lower() != "n":
+                os.system("rm " + self.outputfile)
+                f = open(self.outputfile, "x", encoding="utf-8")
+            else:
+                exit(0)
+        f.write("domains:, ")
         for addr in self.accounts:
-            print(addr.split("@")[1], end=", ")
-        print()
+            f.write(addr.split("@")[1])
+            f.write(", ")
 
-        print("addresses:", end=" ")
+        f.write("\naddresses:, ")
         for addr in self.accounts:
-            print(addr, end=", ")
-        print()
+            f.write(addr)
+            f.write(", ")
 
-        print("sending:", end=" ")
+        f.write("\nsending:, ")
         for addr in self.accounts:
-            print(self.sending[addr], end=" ")
-        print()
+            f.write(str(self.sending[addr]))
+            f.write(", ")
 
-        print("receiving:", end=" ")
+        f.write("\nreceiving:, ")
         for addr in self.accounts:
-            print(self.receiving[addr], end=" ")
-        print()
+            f.write(str(self.receiving[addr]))
+            f.write(", ")
+
+        f.close()
 
         # create output file? overwrite?
         # only write the results at the end of the test
