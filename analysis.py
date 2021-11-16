@@ -52,8 +52,9 @@ class EchoPlugin:
 
 
 class Output:
-    def __init__(self, outputfile):
+    def __init__(self, outputfile, overwrite):
         self.outputfile = outputfile
+        self.overwrite = overwrite
         self.accounts = []
         self.logins = {}
         self.sending = {}
@@ -71,7 +72,8 @@ class Output:
         try:
             f = open(self.outputfile, "x", encoding="utf-8")
         except FileExistsError:
-            if input(self.outputfile + " already exists. Do you want to delete it? [Y/n]").lower() != "n":
+            if input((self.outputfile + " already exists. Do you want to delete it? [Y/n]").lower() != "n") or \
+                    self.overwrite is True:
                 os.system("rm " + self.outputfile)
                 f = open(self.outputfile, "x", encoding="utf-8")
             else:
@@ -219,15 +221,18 @@ def parse_accounts_file(accounts_file: str) -> Tuple[list, dict]:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--data_dir", help="directory for the account data",
-                        default="/tmp/" + "".join(random.choices("abcdef",k=5)))
+    parser.add_argument("-y", "--yes", action="store_true", default=False,
+                        help="always answer yes if prompted")
     parser.add_argument("-a", "--accounts_file", help="a file containing mail accounts",
                         default="testaccounts.txt")
+    parser.add_argument("-d", "--data_dir", help="directory for the account data",
+                        default="/tmp/" + "".join(random.choices("abcdef",k=5)))
+    parser.add_argument("-o", "--output", type=str, default="results.csv",
+                        help="output file for the results in CSV format")
     parser.add_argument("-t", "--timeout", type=int, default=1500,
                         help="seconds after which tests are aborted")
-    parser.add_argument("-o", "--output", type=str, default="results.csv")
     args = parser.parse_args()
-    output = Output(args.output)
+    output = Output(args.output, args.yes)
 
     credentials, spider = parse_accounts_file(args.accounts_file)
     assert spider is not None, "tests need a spider echobot account to run"
