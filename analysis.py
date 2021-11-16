@@ -83,10 +83,10 @@ class Output:
             f.write(addr.split("@")[1])
             f.write(", ")
 
-        f.write("\naddresses:, ")
-        for addr in self.accounts:
-            f.write(addr)
-            f.write(", ")
+        #f.write("\naddresses:, ")
+        #for addr in self.accounts:
+        #    f.write(addr)
+        #    f.write(", ")
 
         f.write("\nsending:, ")
         for addr in self.accounts:
