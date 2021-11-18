@@ -9,10 +9,12 @@ class Output:
         self.sending = {}
         self.receiving = {}
         self.groupadd = {}
+        self.groupmsgs = {}
 
     def submit_login_result(self, addr, duration):
         self.accounts.append(addr)
         self.logins[addr] = duration
+        self.groupmsgs[addr] = {}
 
     def submit_1on1_result(self, addr, sendduration, recvduration):
         self.sending[addr] = sendduration
@@ -20,6 +22,9 @@ class Output:
 
     def submit_groupadd_result(self, addr, duration):
         self.groupadd[addr] = duration
+
+    def submit_groupmsg_result(self, addr, sender, duration):
+        self.groupmsgs[addr][sender] = duration
 
     def write(self):
         try:
@@ -57,6 +62,19 @@ class Output:
                 f.write("timeout, ")
             f.write(str(self.groupadd[addr]))
             f.write(", ")
+
+        for addr in self.accounts:
+            f.write("\n%s:, " % (addr,))
+            groupresults = self.groupmsgs.get(addr)
+            for ac in self.accounts:
+                if addr == ac:
+                    f.write("self, ")
+                    continue
+                try:
+                    f.write(str(groupresults.get(ac)))
+                except TypeError:
+                    f.write("NaN")
+                f.write(", ")
 
         f.close()
 
