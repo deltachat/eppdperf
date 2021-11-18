@@ -229,7 +229,7 @@ def main():
                         default="/tmp/" + "".join(random.choices("abcdef",k=5)))
     parser.add_argument("-o", "--output", type=str, default="results.csv",
                         help="output file for the results in CSV format")
-    parser.add_argument("-t", "--timeout", type=int, default=1500,
+    parser.add_argument("-t", "--timeout", type=int, default=60,
                         help="seconds after which tests are aborted")
     args = parser.parse_args()
     output = Output(args.output, args.yes)
