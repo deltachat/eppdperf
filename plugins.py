@@ -10,18 +10,23 @@ class ReceivePlugin:
     @deltachat.account_hookimpl
     def ac_incoming_message(message):
         received = time.time()
-        chat = message.create_chat()
-        if not chat.can_send():
+        message.create_chat()
+        if not message.chat.can_send():
             # if it's a device message or mailing list, we don't need to look at it.
             return
         sender = message.get_sender_contact().addr
         receiver = message.account.get_self_contact().addr
-        if chat.is_group():
-            print("%s: joined group chat %s" % (receiver, chat.get_name()))
-            return  # for now it's enough to just accept the group chat
-        msgcontent = parse_spider_msg(message.text)
+        msgcontent = parse_msg(message.text)
         firsttravel = msgcontent.get("testduration")
         secondtravel = received - msgcontent.get("begin")
+        iam = msgcontent.get("sender")
+        if message.chat.is_group():
+            if iam == "spider":
+                print("%s: joined group chat %s after %.1f seconds" % (receiver, message.chat.get_name(), secondtravel))
+                message.chat.send_text("Sender: %s\nBegin: %s" % (receiver, str(time.time())))
+                return  # for now it's enough to just accept the group chat
+            else:
+                return  # when messages by others arrived is checked later by the main thread
         print("%s: test message took %.1f seconds to %s and %.1f seconds back." %
               (receiver, firsttravel, sender, secondtravel))
         message.account.output.submit_1on1_result(receiver, firsttravel, secondtravel)
@@ -39,21 +44,23 @@ class EchoPlugin:
         addr = message.get_sender_contact().addr
         if message.is_system_message():
             message.chat.send_text("echoing system message from {}:\n{}".format(addr, message))
+        elif message.chat.is_group():
+            return  # can safely ignore group messages. spider only creates it
         else:
-            sent = float(message.text)
+            sent = parse_msg(message.text).get("begin")
             testduration = received - sent
             msginfo = message.get_message_info()
             begin = time.time()
             message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
 
 
-def parse_spider_msg(info: str) -> dict:
-    """Parse data out of a spider response.
+def parse_msg(text: str) -> dict:
+    """Parse data out of a message.
 
-    :param info: a string containing the message info of a deltachat.message.
+    :param text: a string containing the message info of a deltachat.message.
     :return: a dictionary with different values parse from the message info.
     """
-    lines = info.splitlines()
+    lines = text.splitlines()
     response = {}
     for line in lines:
         if line.startswith("TestDuration: "):
@@ -69,6 +76,8 @@ def parse_spider_msg(info: str) -> dict:
             response["sent"] = (sentdt - datetime.datetime(1970, 1, 1)).total_seconds()
         if line.startswith("Begin: "):
             response["begin"] = float(line.partition(" ")[2])
+        if line.startswith("Sender: "):
+            response["sender"] = line.partition(" ")[2]
     if response.get("received") and response.get("sent"):
         response["tdelta"] = (receiveddt - sentdt).total_seconds()
     return response

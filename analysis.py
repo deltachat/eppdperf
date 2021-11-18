@@ -4,11 +4,12 @@ import argparse
 import os
 import random
 import time
+import datetime
 from typing import Tuple
 
 # this script assumes you installed deltachat: py.delta.chat/install.html
 import deltachat
-from plugins import EchoPlugin, ReceivePlugin
+from plugins import EchoPlugin, ReceivePlugin, parse_msg
 from output import Output
 
 
@@ -61,7 +62,7 @@ def check_account_with_spider(spac: deltachat.Account, account: deltachat.Accoun
     :param account: a deltachat.Account object to check.
     """
     chat = account.create_chat(spac)
-    chat.send_text("%f" % time.time())
+    chat.send_text("Begin: %f" % time.time())
 
 
 def parse_config_line(line: str):
@@ -144,9 +145,9 @@ def main():
     print("Creating group " + str(begin))
     group = spac.create_group_chat("Test Group " + str(begin),
                                    contacts=[spac.create_contact(entry["addr"]) for entry in credentials])
-    group.send_text("Welcome to " + group.get_name())
+    group.send_text("Sender: spider\nBegin: %s" % (str(begin),))
     group_members = []
-    while time.time() < float(begin) + 60:
+    while time.time() < float(begin) + args.timeout:
         if len(accounts) == len(group_members):
             break
         for ac in accounts:
@@ -163,7 +164,21 @@ def main():
                 print(ac.get_self_contact().addr, end=", ")
         print()
 
-    # send test messages to spider
+    time.sleep(args.timeout)
+    for ac in group_members:
+        for chat in ac.get_chats():
+            if chat.get_name() == group.get_name():
+                grp = chat
+        msgs = grp.get_messages()
+        for msg in msgs:
+            msgcontent = parse_msg(msg.text)
+            if msg.time_received is None or msgcontent.get("sender") == "spider":
+                continue
+            msgreceived = (msg.time_received - datetime.datetime(1970, 1, 1)).total_seconds()
+            duration = msgreceived - msgcontent.get("begin")
+            print("%s received message from %s after %.1f seconds" % (ac.get_self_contact().addr, msgcontent["sender"], duration))
+
+    # send test messages with spider
     for ac in accounts:
         if spider is not None:
             if spider["addr"] is not ac.get_self_contact().addr:
@@ -176,8 +191,8 @@ def main():
             if ac._shutdown_event.is_set():
                 accounts.remove(ac)
             elif time.time() > ac.begin + args.timeout:
-                print("%.1f seconds timeout while waiting for echo to %s - test failed." %
-                        (args.timeout, ac.get_self_contact().addr))
+                print("%d seconds timeout while waiting for echo to %s - test failed." %
+                      (args.timeout, ac.get_self_contact().addr))
                 ac.shutdown()
                 ac.wait_shutdown()
     if spider is not None:
