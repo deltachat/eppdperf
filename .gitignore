@@ -3,6 +3,7 @@ testaccounts.txt
 
 # virtualenv
 venv/
+__pycache__/
 
 # pycharm
 .idea

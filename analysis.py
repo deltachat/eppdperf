@@ -4,52 +4,11 @@ import argparse
 import os
 import random
 import time
-import datetime
 from typing import Tuple
 
 # this script assumes you installed deltachat: py.delta.chat/install.html
 import deltachat
-
-class ReceivePlugin:
-    name = "test account"
-
-    @staticmethod
-    @deltachat.account_hookimpl
-    def ac_incoming_message(message):
-        received = time.time()
-        message.create_chat()
-        if not message.chat.can_send():
-            # if it's a device message or mailing list, we don't need to look at it.
-            return
-        sender = message.get_sender_contact().addr
-        receiver = message.account.get_self_contact().addr
-        msgcontent = parse_spider_msg(message.text)
-        firsttravel = msgcontent.get("testduration")
-        secondtravel = received - msgcontent.get("begin")
-        print("%s: test message took %.1f seconds to %s and %.1f seconds back." %
-              (receiver, firsttravel, sender, secondtravel))
-        message.account.output.submit_1on1_results(receiver, firsttravel, secondtravel)
-        message.account.shutdown()
-
-
-class EchoPlugin:
-    name = "spider"
-
-    @staticmethod
-    @deltachat.account_hookimpl
-    def ac_incoming_message(message):
-        received = time.time()
-        message.create_chat()
-        addr = message.get_sender_contact().addr
-        if message.is_system_message():
-            message.chat.send_text("echoing system message from {}:\n{}".format(addr, message))
-        else:
-            sent = float(message.text)
-            testduration = received - sent
-            msginfo = message.get_message_info()
-            begin = time.time()
-            message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
-
+from plugins import EchoPlugin, ReceivePlugin
 
 class Output:
     def __init__(self, outputfile, overwrite):
@@ -157,38 +116,11 @@ def check_account_with_spider(spac: deltachat.Account, account: deltachat.Accoun
     chat.send_text("%f" % time.time())
 
 
-def parse_spider_msg(info: str) -> dict:
-    """Parse data out of a spider response.
-
-    :param info: a string containing the message info of a deltachat.message.
-    :return: a dictionary with different values parse from the message info.
-    """
-    lines = info.splitlines()
-    response = {}
-    for line in lines:
-        if line.startswith("TestDuration: "):
-            response["testduration"] = float(line.partition(" ")[2])
-        if line.startswith("Received: "):
-            receivedstr = line.partition(" ")[2]
-            receiveddt = datetime.datetime.strptime(receivedstr, "%Y.%m.%d %H:%M:%S")
-            response["received"] = (receiveddt - datetime.datetime(1970,1,1)).total_seconds()
-        if line.startswith("Sent: "):
-            sentcontent = line.partition(" ")[2]
-            sentstr = sentcontent.partition(" by ")[0]
-            sentdt = datetime.datetime.strptime(sentstr, "%Y.%m.%d %H:%M:%S")
-            response["sent"] = (sentdt - datetime.datetime(1970,1,1)).total_seconds()
-        if line.startswith("Begin: "):
-            response["begin"] = float(line.partition(" ")[2])
-    if response.get("received") and response.get("sent"):
-        response["tdelta"] = (receiveddt - sentdt).total_seconds()
-    return response
-
-
-def parse_line(line: str) -> dict:
+def parse_line(line: str):
     """Parse config file line and create an entry out of it.
 
     :param line: a string with several config options separated by spaces
-    :return: a dictionary with account credentials
+    :return: a dictionary with account credentials, or None
     """
     if line[0] == "#" or line[0] == "\n":
         return
