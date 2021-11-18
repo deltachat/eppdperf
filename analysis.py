@@ -177,6 +177,7 @@ def main():
             msgreceived = (msg.time_received - datetime.datetime(1970, 1, 1)).total_seconds()
             duration = msgreceived - msgcontent.get("begin")
             print("%s received message from %s after %.1f seconds" % (ac.get_self_contact().addr, msgcontent["sender"], duration))
+            output.submit_groupmsg_result(ac.get_self_contact().addr, msgcontent["sender"], duration)
 
     # send test messages with spider
     for ac in accounts:
