@@ -6,6 +6,7 @@ measured with the `analysis.py` script; the output is tracked in the
 
 Measurement criteria are:
 - How long does the SMTP+IMAP login take
+- How long does it take to add an account to a group
 - How long does it take to send an email
 - How long does it take to receive an email
 
@@ -19,6 +20,6 @@ accounts.
 python3 -m venv venv
 . venv/bin/activate
 pip install deltachat
-./analysis.py
+./analysis.py -h
 ```
 

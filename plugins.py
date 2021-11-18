@@ -2,6 +2,7 @@ import time
 import datetime
 import deltachat
 
+
 class ReceivePlugin:
     name = "test account"
 
@@ -25,6 +26,7 @@ class ReceivePlugin:
               (receiver, firsttravel, sender, secondtravel))
         message.account.output.submit_1on1_result(receiver, firsttravel, secondtravel)
         message.account.shutdown()
+
 
 class EchoPlugin:
     name = "spider"
@@ -59,12 +61,12 @@ def parse_spider_msg(info: str) -> dict:
         if line.startswith("Received: "):
             receivedstr = line.partition(" ")[2]
             receiveddt = datetime.datetime.strptime(receivedstr, "%Y.%m.%d %H:%M:%S")
-            response["received"] = (receiveddt - datetime.datetime(1970,1,1)).total_seconds()
+            response["received"] = (receiveddt - datetime.datetime(1970, 1, 1)).total_seconds()
         if line.startswith("Sent: "):
             sentcontent = line.partition(" ")[2]
             sentstr = sentcontent.partition(" by ")[0]
             sentdt = datetime.datetime.strptime(sentstr, "%Y.%m.%d %H:%M:%S")
-            response["sent"] = (sentdt - datetime.datetime(1970,1,1)).total_seconds()
+            response["sent"] = (sentdt - datetime.datetime(1970, 1, 1)).total_seconds()
         if line.startswith("Begin: "):
             response["begin"] = float(line.partition(" ")[2])
     if response.get("received") and response.get("sent"):
