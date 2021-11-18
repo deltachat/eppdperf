@@ -23,7 +23,7 @@ class ReceivePlugin:
         secondtravel = received - msgcontent.get("begin")
         print("%s: test message took %.1f seconds to %s and %.1f seconds back." %
               (receiver, firsttravel, sender, secondtravel))
-        message.account.output.submit_1on1_results(receiver, firsttravel, secondtravel)
+        message.account.output.submit_1on1_result(receiver, firsttravel, secondtravel)
         message.account.shutdown()
 
 class EchoPlugin:
