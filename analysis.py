@@ -100,7 +100,7 @@ def setup_account(output: object, entry: dict, data_dir: str, plugin: object) ->
     configtracker.wait_finish()
     ac.start_io()
     duration = time.time() - begin
-    print("%s: Successful login as %s in %.1f seconds." % (entry["addr"], plugin.name, duration))
+    print("%s: successful login as %s in %.1f seconds." % (entry["addr"], plugin.name, duration))
     if plugin is not EchoPlugin:
         output.submit_login_result(entry.get("addr"), duration)
     ac.output = output
@@ -191,6 +191,30 @@ def main():
         except AssertionError:
             print("this line doesn't contain valid addr and app_pw: %s" %
                     (entry["line"],))
+
+    # create test group. who is in it after 60 seconds?
+    begin = time.time()
+    print("Creating group " + str(begin))
+    group = spac.create_group_chat("Test Group " + str(begin),
+                                   contacts=[spac.create_contact(entry["addr"]) for entry in credentials])
+    group.send_text("Welcome to " + group.get_name())
+    group_members = []
+    while time.time() < float(begin) + 60:
+        if len(accounts) == len(group_members):
+            break
+        for ac in accounts:
+            if ac in group_members:
+                continue
+            for chat in ac.get_chats():
+                if chat.get_name() == group.get_name():
+                    group_members.append(ac)
+                    print("Added %s after %.1f seconds" % (ac.get_self_contact().addr, time.time() - begin))
+    else:
+        print("Timeout reached. Not added to group: ", end="")
+        for ac in accounts:
+            if ac not in group_members:
+                print(ac.get_self_contact().addr, end=", ")
+        print()
 
     # send test messages to spider
     for ac in accounts:

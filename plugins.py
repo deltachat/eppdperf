@@ -9,12 +9,15 @@ class ReceivePlugin:
     @deltachat.account_hookimpl
     def ac_incoming_message(message):
         received = time.time()
-        message.create_chat()
-        if not message.chat.can_send():
+        chat = message.create_chat()
+        if not chat.can_send():
             # if it's a device message or mailing list, we don't need to look at it.
             return
         sender = message.get_sender_contact().addr
         receiver = message.account.get_self_contact().addr
+        if chat.is_group():
+            print("%s: joined group chat %s" % (receiver, chat.get_name()))
+            return  # for now it's enough to just accept the group chat
         msgcontent = parse_spider_msg(message.text)
         firsttravel = msgcontent.get("testduration")
         secondtravel = received - msgcontent.get("begin")
