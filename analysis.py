@@ -18,14 +18,18 @@ class Output:
         self.logins = {}
         self.sending = {}
         self.receiving = {}
+        self.groupadd = {}
 
     def submit_login_result(self, addr, duration):
         self.accounts.append(addr)
         self.logins[addr] = duration
 
-    def submit_1on1_results(self, addr, sendduration, recvduration):
+    def submit_1on1_result(self, addr, sendduration, recvduration):
         self.sending[addr] = sendduration
         self.receiving[addr] = recvduration
+
+    def submit_groupadd_result(self, addr, duration):
+        self.groupadd[addr] = duration
 
     def write(self):
         try:
@@ -55,6 +59,13 @@ class Output:
         f.write("\nreceiving:, ")
         for addr in self.accounts:
             f.write(str(self.receiving[addr]))
+            f.write(", ")
+
+        f.write("\ngroupadd:, ")
+        for addr in self.accounts:
+            if addr not in self.groupadd:
+                f.write("timeout, ")
+            f.write(str(self.groupadd[addr]))
             f.write(", ")
 
         f.close()
@@ -208,7 +219,7 @@ def main():
             for chat in ac.get_chats():
                 if chat.get_name() == group.get_name():
                     group_members.append(ac)
-                    print("Added %s after %.1f seconds" % (ac.get_self_contact().addr, time.time() - begin))
+                    output.submit_groupadd_result(ac.get_self_contact().addr, time.time() - begin)
     else:
         print("Timeout reached. Not added to group: ", end="")
         for ac in accounts:
