@@ -64,6 +64,7 @@ class Output:
         # print test results nicely during test
         #
 
+
 def setup_account(output: object, entry: dict, data_dir: str, plugin: object) -> deltachat.Account:
     """Creates a Delta Chat account for a given credentials dictionary.
 
@@ -116,7 +117,7 @@ def check_account_with_spider(spac: deltachat.Account, account: deltachat.Accoun
     chat.send_text("%f" % time.time())
 
 
-def parse_line(line: str):
+def parse_config_line(line: str):
     """Parse config file line and create an entry out of it.
 
     :param line: a string with several config options separated by spaces
@@ -136,13 +137,17 @@ def parse_line(line: str):
 
 
 def parse_accounts_file(accounts_file: str) -> Tuple[list, dict]:
-    # import and parse accounts-file
+    """import and parse accounts-file
+
+    :param accounts_file: (str) path to accounts file
+    :return: a list with test account entry dicts, a dict with the spider entry dict
+    """
     with open(accounts_file, "r", encoding="UTF-8") as f:
         lines = f.readlines()
     credentials = []
     spider = None
     for line in lines:
-        entry = parse_line(line)
+        entry = parse_config_line(line)
         if entry is not None:
             if entry.get("spider") == "true":
                 spider = entry
