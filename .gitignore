@@ -1,2 +1,8 @@
+# credentials for test accounts
 testaccounts.txt
+
+# virtualenv
 venv/
+
+# pycharm
+.idea
