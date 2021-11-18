@@ -227,7 +227,7 @@ def main():
                         default="testaccounts.txt")
     parser.add_argument("-d", "--data_dir", help="directory for the account data",
                         default="/tmp/" + "".join(random.choices("abcdef",k=5)))
-    parser.add_argument("-o", "--output", type=str, default="results.csv",
+    parser.add_argument("-o", "--output", type=str, default="performance.csv",
                         help="output file for the results in CSV format")
     parser.add_argument("-t", "--timeout", type=int, default=60,
                         help="seconds after which tests are aborted")
