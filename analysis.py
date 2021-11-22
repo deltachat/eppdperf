@@ -55,14 +55,21 @@ def setup_account(output: object, entry: dict, data_dir: str, plugin: object) ->
     return ac
 
 
-def check_account_with_spider(spac: deltachat.Account, account: deltachat.Account):
+def check_account_with_spider(spac: deltachat.Account, account: deltachat.Account, timeout: int):
     """Send a message to spider and check if a reply arrives.
 
     :param spac: the deltachat.Account object of the spider.
     :param account: a deltachat.Account object to check.
     """
     chat = account.create_chat(spac)
-    chat.send_text("Begin: %f" % time.time())
+    message = chat.prepare_message_file("ph4nt_einfache_antworten.mp3", mime_type="application/octet-stream")
+    message.set_text("Begin: %f" % time.time())
+    chat.send_prepared(message)
+    begin = time.time()
+    while message.is_out_delivered() is False and time.time() < begin + timeout:
+        time.sleep(0.5)
+    else:
+        account.delete_messages([message])
 
 
 def parse_config_line(line: str):
@@ -73,7 +80,7 @@ def parse_config_line(line: str):
     """
     if line[0] == "#" or line[0] == "\n":
         return
-    entry = { "line" : line }
+    entry = {"line": line}
     parameters = line.rstrip().split(" ")
     for p in parameters:
         argument = p.partition("=")
@@ -179,11 +186,11 @@ def main():
             print("%s received message from %s after %.1f seconds" % (ac.get_self_contact().addr, msgcontent["sender"], duration))
             output.submit_groupmsg_result(ac.get_self_contact().addr, msgcontent["sender"], duration)
 
-    # send test messages with spider
+    # send test messages to spider
     for ac in accounts:
         if spider is not None:
             if spider["addr"] is not ac.get_self_contact().addr:
-                check_account_with_spider(spac, ac)
+                check_account_with_spider(spac, ac, args.timeout)
                 ac.begin = time.time()
 
     # wait until finished, or timeout
@@ -198,6 +205,9 @@ def main():
                 ac.shutdown()
                 ac.wait_shutdown()
     if spider is not None:
+        answer = input("Do you want to delete all messages in the %s account? [y/N]" % (spider["addr"],))
+        if answer.lower() == "y" or args.y:
+            spac.delete_messages(spac.get_chats())
         spac.shutdown()
         spac.wait_shutdown()
     output.write()
