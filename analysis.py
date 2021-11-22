@@ -194,6 +194,7 @@ def main():
             elif time.time() > ac.begin + args.timeout:
                 print("%d seconds timeout while waiting for echo to %s - test failed." %
                       (args.timeout, ac.get_self_contact().addr))
+                output.submit_1on1_result(ac.get_self_contact().addr, "timeout", "timeout")
                 ac.shutdown()
                 ac.wait_shutdown()
     if spider is not None:
