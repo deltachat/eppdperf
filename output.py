@@ -71,9 +71,9 @@ class Output:
                     f.write("self, ")
                     continue
                 try:
-                    f.write(str(groupresults.get(ac)))
-                except TypeError:
-                    f.write("NaN")
+                    f.write(str(groupresults[ac]))
+                except KeyError:
+                    f.write("timeout")
                 f.write(", ")
 
         f.close()
