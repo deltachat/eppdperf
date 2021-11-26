@@ -60,6 +60,7 @@ class Output:
         for addr in self.accounts:
             if addr not in self.groupadd:
                 f.write("timeout, ")
+                continue
             f.write(str(self.groupadd[addr]))
             f.write(", ")
 
