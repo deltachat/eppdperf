@@ -1,0 +1,9 @@
+# credentials for test accounts
+testaccounts.txt
+
+# virtualenv
+venv/
+__pycache__/
+
+# pycharm
+.idea
