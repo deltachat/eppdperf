@@ -46,7 +46,7 @@ class Output:
         #    f.write(addr)
         #    f.write(", ")
 
-        f.write("\nsending:, ")
+        f.write("\nfilesending:, ")
         for addr in self.accounts:
             f.write(str(self.sending[addr]))
             f.write(", ")
