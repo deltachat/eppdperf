@@ -30,12 +30,12 @@ class Output:
         try:
             f = open(self.outputfile, "x", encoding="utf-8")
         except FileExistsError:
-            if input(self.outputfile + " already exists. Do you want to overwrite it? [Y/n] ").lower() != "n" or \
-                    self.overwrite is True:
-                os.system("rm " + self.outputfile)
-                f = open(self.outputfile, "x", encoding="utf-8")
-            else:
-                exit(0)
+            if not self.overwrite:
+                answer = input(self.outputfile + " already exists. Do you want to overwrite it? [Y/n] ")
+                if answer.lower() == "n":
+                    exit(0)
+            os.system("rm " + self.outputfile)
+            f = open(self.outputfile, "x", encoding="utf-8")
         f.write("domains:, ")
         for addr in self.accounts:
             f.write(addr.split("@")[1])
