@@ -135,10 +135,10 @@ def main():
             accounts.append(setup_account(output, entry, args.data_dir, ReceivePlugin))
         except deltachat.tracker.ConfigureFailed:
             print("Login failed for %s with password:\n%s" %
-                    (entry["addr"], entry["app_pw"]))
+                  (entry["addr"], entry["app_pw"]))
         except AssertionError:
             print("this line doesn't contain valid addr and app_pw: %s" %
-                    (entry["line"],))
+                  (entry["line"],))
 
     # create test group. who is in it after 60 seconds?
     begin = time.time()
@@ -164,20 +164,24 @@ def main():
                 print(ac.get_self_contact().addr, end=", ")
         print()
 
-    time.sleep(args.timeout)
-    for ac in group_members:
-        for chat in ac.get_chats():
-            if chat.get_name() == group.get_name():
-                grp = chat
-        msgs = grp.get_messages()
-        for msg in msgs:
-            msgcontent = parse_msg(msg.text)
-            if msg.time_received is None or msgcontent.get("sender") == "spider":
-                continue
-            msgreceived = (msg.time_received - datetime.datetime(1970, 1, 1)).total_seconds()
-            duration = msgreceived - msgcontent.get("begin")
-            print("%s received message from %s after %.1f seconds" % (ac.get_self_contact().addr, msgcontent["sender"], duration))
-            output.submit_groupmsg_result(ac.get_self_contact().addr, msgcontent["sender"], duration)
+    begin = time.time()
+    while time.time() < float(begin) + args.timeout:
+        if group_members == []:
+            break
+        for ac in group_members:
+            for chat in ac.get_chats():
+                if chat.get_name() == group.get_name():
+                    grp = chat
+            msgs = grp.get_messages()
+            for msg in msgs:
+                msgcontent = parse_msg(msg.text)
+                if msg.time_received is None or msgcontent.get("sender") == "spider":
+                    continue
+                msgreceived = (msg.time_received - datetime.datetime(1970, 1, 1)).total_seconds()
+                duration = msgreceived - msgcontent.get("begin")
+                print("%s received message from %s after %.1f seconds" % (ac.get_self_contact().addr, msgcontent["sender"], duration))
+                output.submit_groupmsg_result(ac.get_self_contact().addr, msgcontent["sender"], duration)
+                group_members.remove(ac)
 
     # send test messages with spider
     for ac in accounts:
