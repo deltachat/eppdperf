@@ -191,6 +191,9 @@ def main():
                     grp = chat
             msgs = grp.get_messages()
             for msg in msgs:
+                if msg.is_in_seen():
+                    continue
+                msg.mark_seen()
                 msgcontent = parse_msg(msg.text)
                 if msg.time_received is None or msgcontent.get("sender") == "spider":
                     continue
