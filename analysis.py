@@ -181,10 +181,11 @@ def main():
         print()
 
     begin = time.time()
-    while time.time() < float(begin) + args.timeout:
-        if group_members == []:
-            break
-        for ac in group_members:
+    counter = []
+    for ac in group_members:
+        counter.append(ac)
+    while time.time() < float(begin) + args.timeout and len(counter) > 0:
+        for ac in counter:
             for chat in ac.get_chats():
                 if chat.get_name() == group.get_name():
                     grp = chat
@@ -197,7 +198,8 @@ def main():
                 duration = msgreceived - msgcontent.get("begin")
                 print("%s received message from %s after %.1f seconds" % (ac.get_self_contact().addr, msgcontent["sender"], duration))
                 output.submit_groupmsg_result(ac.get_self_contact().addr, msgcontent["sender"], duration)
-                group_members.remove(ac)
+                if len(output.groupmsgs.get(ac.get_self_contact().addr)) == len(group_members) - 1:
+                    counter.remove(ac)
 
     # send test messages to spider
     for ac in accounts:
