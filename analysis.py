@@ -126,7 +126,7 @@ def main():
                         default="/tmp/" + "".join(random.choices("abcdef",k=5)))
     parser.add_argument("-o", "--output", type=str, default="performance.csv",
                         help="output file for the results in CSV format")
-    parser.add_argument("-t", "--timeout", type=int, default=60,
+    parser.add_argument("-t", "--timeout", type=int, default=90,
                         help="seconds after which tests are aborted")
     parser.add_argument("-f", "--testfile", type=str, default="ph4nt_einfache_antworten.mp3",
                         help="path to test file, the default file 15 MB large")
