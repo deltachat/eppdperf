@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import shutil
 import random
 import time
 import datetime
@@ -13,7 +14,7 @@ from plugins import EchoPlugin, ReceivePlugin, parse_msg
 from output import Output
 
 
-def setup_account(output: object, entry: dict, data_dir: str, plugin: object) -> deltachat.Account:
+def setup_account(output: Output, entry: dict, data_dir: str, plugin: object) -> deltachat.Account:
     """Creates a Delta Chat account for a given credentials dictionary.
 
     :param output: the Output object which takes care of the results
@@ -55,15 +56,19 @@ def setup_account(output: object, entry: dict, data_dir: str, plugin: object) ->
     return ac
 
 
-def check_account_with_spider(spac: deltachat.Account, account: deltachat.Account, timeout: int):
+def check_account_with_spider(spac: deltachat.Account, account: deltachat.Account, testfile: os.PathLike, timeout: int):
     """Send a message to spider and check if a reply arrives.
 
     :param spac: the deltachat.Account object of the spider.
     :param account: a deltachat.Account object to check.
+    :param testfile: path to test file, the default is 15 MB large
+    :param timeout: seconds until the script gives up
     """
     chat = account.create_chat(spac)
-    message = chat.prepare_message_file("ph4nt_einfache_antworten.mp3", mime_type="application/octet-stream")
-    message.set_text("Begin: %f" % time.time())
+    # need to copy testfile to blobdir to avoid error
+    shutil.copy(testfile, account.get_blobdir())
+    newfilepath = os.path.join(account.get_blobdir(), os.path.basename(testfile))
+    message = chat.prepare_message_file(newfilepath, mime_type="application/octet-stream")
     chat.send_prepared(message)
     begin = time.time()
     while message.is_out_delivered() is False and time.time() < begin + timeout:
@@ -123,8 +128,12 @@ def main():
                         help="output file for the results in CSV format")
     parser.add_argument("-t", "--timeout", type=int, default=60,
                         help="seconds after which tests are aborted")
+    parser.add_argument("-f", "--testfile", type=str, default="ph4nt_einfache_antworten.mp3",
+                        help="path to test file, the default file 15 MB large")
     args = parser.parse_args()
     output = Output(args.output, args.yes)
+
+    testfile = os.path.join(os.environ.get("PWD"), args.testfile)
 
     credentials, spider = parse_accounts_file(args.accounts_file)
     assert spider is not None, "tests need a spider echobot account to run"
@@ -183,14 +192,15 @@ def main():
                 continue
             msgreceived = (msg.time_received - datetime.datetime(1970, 1, 1)).total_seconds()
             duration = msgreceived - msgcontent.get("begin")
-            print("%s received message from %s after %.1f seconds" % (ac.get_self_contact().addr, msgcontent["sender"], duration))
+            print("%s received message from %s after %.1f seconds" %
+                  (ac.get_self_contact().addr, msgcontent["sender"], duration))
             output.submit_groupmsg_result(ac.get_self_contact().addr, msgcontent["sender"], duration)
 
     # send test messages to spider
     for ac in accounts:
         if spider is not None:
             if spider["addr"] is not ac.get_self_contact().addr:
-                check_account_with_spider(spac, ac, args.timeout)
+                check_account_with_spider(spac, ac, testfile, args.timeout)
                 ac.begin = time.time()
 
     # wait until finished, or timeout
@@ -204,9 +214,9 @@ def main():
                 output.submit_1on1_result(ac.get_self_contact().addr, "timeout", "timeout")
                 ac.shutdown()
                 ac.wait_shutdown()
-    if spider is not None:
+    if not args.yes:
         answer = input("Do you want to delete all messages in the %s account? [y/N]" % (spider["addr"],))
-        if answer.lower() == "y" or args.y:
+        if answer.lower() == "y":
             spac.delete_messages(spac.get_chats())
         spac.shutdown()
         spac.wait_shutdown()

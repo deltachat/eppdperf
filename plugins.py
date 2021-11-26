@@ -47,10 +47,9 @@ class EchoPlugin:
         elif message.chat.is_group():
             return  # can safely ignore group messages. spider only creates it
         else:
-            sent = parse_msg(message.text).get("begin")
-            testduration = received - sent
-            msginfo = message.get_message_info()
             begin = time.time()
+            msginfo = message.get_message_info()
+            testduration = parse_msg(msginfo).get("tdelta")
             message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
 
 
