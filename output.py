@@ -65,7 +65,7 @@ class Output:
             f.write(", ")
 
         for addr in self.accounts:
-            f.write("\n%s:, " % (addr,))
+            f.write("\n%s:, " % (addr.split("@")[1],))
             groupresults = self.groupmsgs.get(addr)
             for ac in self.accounts:
                 if addr == ac:
