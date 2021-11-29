@@ -23,3 +23,7 @@ pip install deltachat
 ./analysis.py -h
 ```
 
+## License
+
+Das Lied "Einfache Antworten" von [ph4nt](ph4nt24.bandcamp.com) steht unter [CC
+BY-SA 3.0.](https://creativecommons.org/licenses/by-sa/3.0/)

@@ -46,7 +46,7 @@ class Output:
         #    f.write(addr)
         #    f.write(", ")
 
-        f.write("\nsending:, ")
+        f.write("\nfilesending:, ")
         for addr in self.accounts:
             f.write(str(self.sending[addr]))
             f.write(", ")
@@ -60,11 +60,12 @@ class Output:
         for addr in self.accounts:
             if addr not in self.groupadd:
                 f.write("timeout, ")
+                continue
             f.write(str(self.groupadd[addr]))
             f.write(", ")
 
         for addr in self.accounts:
-            f.write("\n%s:, " % (addr,))
+            f.write("\n%s:, " % (addr.split("@")[1],))
             groupresults = self.groupmsgs.get(addr)
             for ac in self.accounts:
                 if addr == ac:
