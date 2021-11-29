@@ -70,12 +70,6 @@ def check_account_with_spider(spac: deltachat.Account, account: deltachat.Accoun
     newfilepath = os.path.join(account.get_blobdir(), os.path.basename(testfile))
     message = chat.prepare_message_file(newfilepath, mime_type="application/octet-stream")
     chat.send_prepared(message)
-    begin = time.time()
-    while message.is_out_delivered() is False and time.time() < begin + timeout:
-        time.sleep(0.5)
-    else:
-        # currently throws warning: The message Mr.X@testrun.org has no UID on the server to delete
-        account.delete_messages([message])
 
 
 def parse_config_line(line: str):
