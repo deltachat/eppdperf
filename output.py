@@ -33,7 +33,7 @@ class Output:
             if not self.overwrite:
                 answer = input(self.outputfile + " already exists. Do you want to overwrite it? [Y/n] ")
                 if answer.lower() == "n":
-                    exit(0)
+                    return
             os.system("rm " + self.outputfile)
             f = open(self.outputfile, "x", encoding="utf-8")
         f.write("domains:, ")

@@ -3,7 +3,7 @@
 import argparse
 import os
 import shutil
-import random
+import tempfile
 import time
 import datetime
 from typing import Tuple
@@ -118,7 +118,7 @@ def main():
     parser.add_argument("-a", "--accounts_file", help="a file containing mail accounts",
                         default="testaccounts.txt")
     parser.add_argument("-d", "--data_dir", help="directory for the account data",
-                        default="/tmp/" + "".join(random.choices("abcdef",k=5)))
+                        default=None)
     parser.add_argument("-o", "--output", type=str, default="performance.csv",
                         help="output file for the results in CSV format")
     parser.add_argument("-t", "--timeout", type=int, default=90,
@@ -133,9 +133,11 @@ def main():
     assert spider is not None, "tests need a spider echobot account to run"
 
     # ensuring measurement data directory
-    if not os.path.isdir(args.data_dir):
-        print("Storing account data in %s" % (args.data_dir,))
-        os.mkdir(args.data_dir)
+    if args.data_dir is None:
+        tempdir = tempfile.TemporaryDirectory(prefix="perfanal")
+        args.data_dir = tempdir.name
+        # rm -r data_dir at the end of the script? ask for removal?
+    print("Storing account data in %s" % (args.data_dir,))
 
     # setup spider and test accounts
     spac = setup_account(output, spider, args.data_dir, EchoPlugin)
