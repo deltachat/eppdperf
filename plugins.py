@@ -39,7 +39,6 @@ class EchoPlugin:
     @staticmethod
     @deltachat.account_hookimpl
     def ac_incoming_message(message):
-        received = time.time()
         message.create_chat()
         addr = message.get_sender_contact().addr
         if message.is_system_message():
@@ -51,6 +50,7 @@ class EchoPlugin:
             testduration = parse_msg(msginfo).get("tdelta")
             begin = time.time()
             message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
+            message.account.output.submit_1on1_result(message.account.get_self_contact().addr, testduration, "timeout")
 
 
 def parse_msg(text: str) -> dict:
