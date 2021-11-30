@@ -56,7 +56,7 @@ def setup_account(output: object, entry: dict, data_dir: str, plugin: object) ->
     return ac
 
 
-def check_account_with_spider(spac: deltachat.Account, account: deltachat.Account, testfile: os.PathLike, timeout: int):
+def check_account_with_spider(spac: deltachat.Account, account: deltachat.Account, testfile: str):
     """Send a message to spider and check if a reply arrives.
 
     :param spac: the deltachat.Account object of the spider.
@@ -201,10 +201,16 @@ def main():
                     counter.remove(ac)
 
     # send test messages to spider
+    testfilebytes = os.path.getsize(testfile)
+    if testfilebytes > 1024 * 1024:
+        testfilesize = str(round(testfilebytes / (1024 * 1024), 3)) + "MB"
+    else:
+        testfilesize = str(round(testfilebytes / (1024), 3)) + "KB"
+    print("Sending %s test file to spider from all accounts:" % (testfilesize,))
     for ac in accounts:
         if spider is not None:
             if spider["addr"] is not ac.get_self_contact().addr:
-                check_account_with_spider(spac, ac, testfile, args.timeout)
+                check_account_with_spider(spac, ac, testfile)
                 ac.begin = time.time()
 
     # wait until finished, or timeout
