@@ -1,18 +1,31 @@
 
+
+def analyse_message_info(message):
+    msginfo = message.get_message_info()
+    testduration = parse_msg(msginfo).get("tdelta")
+    message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
+    message.account.output.submit_1on1_result(message.account.get_self_contact().addr, testduration, "timeout")
+
+
 def perform_measurements(...):
 
     # setup spider and test accounts
-    spac = setup_account(output, spider, args.data_dir, EchoPlugin)
+
+    echo_plugin = EchoPlugin(post_process=analyse_message_info)
+    spac = setup_account(output, spider, args.data_dir, echo_plugin)
     accounts = []
     for entry in credentials:
+        recplug = ReceivePlugin()
         try:
-            accounts.append(setup_account(output, entry, args.data_dir, ReceivePlugin))
+            accounts.append(setup_account(output, entry, args.data_dir, recplug))
         except deltachat.tracker.ConfigureFailed:
             print("Login failed for %s with password:\n%s" %
                   (entry["addr"], entry["app_pw"]))
         except AssertionError:
             print("this line doesn't contain valid addr and app_pw: %s" %
                   (entry["line"],))
+
+    echo_plugin.event_all_logins_complete.wait(timeout=120)
 
     # create test group. who is in it after 60 seconds?
     begin = time.time()
@@ -115,6 +128,8 @@ def setup_account(output: object, entry: dict, data_dir: str, plugin: object) ->
     ac = deltachat.Account(db_path)
     #ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
     ac.add_account_plugin(plugin)
+    login_plugin = LoginPlugin(output)
+    ac.add_account_plugin(login_plugin)
     ac.set_config("addr", entry["addr"])
     ac.set_config("mail_pw", entry["app_pw"])
 
@@ -128,12 +143,7 @@ def setup_account(output: object, entry: dict, data_dir: str, plugin: object) ->
     ac.set_config("sentbox_watch", "0")
     ac.set_config("bot", "1")
     configtracker = ac.configure()
-    configtracker.wait_finish()
     ac.start_io()
-    duration = time.time() - begin
-    print("%s: successful login as %s in %.1f seconds." % (entry["addr"], plugin.name, duration))
-    if plugin is not EchoPlugin:
-        output.submit_login_result(entry.get("addr"), duration)
     ac.output = output
     return ac
 

@@ -1,7 +1,10 @@
 import os
 
 class Output:
-    def __init__(self, outputfile, overwrite):
+    """
+        XXX docs
+    """
+    def __init__(self, outputfile, overwrite, num_accounts):
         self.outputfile = outputfile
         self.overwrite = overwrite
         self.accounts = []
@@ -10,11 +13,25 @@ class Output:
         self.receiving = {}
         self.groupadd = {}
         self.groupmsgs = {}
+        self.num_accounts = num_accounts
+        self.event_all_logins_complete = threading.Event()
 
-    def submit_login_result(self, addr, duration):
+    def submit_login_result(self, addr, duration, success):
+        if not success:
+            print("%s: failed to login as %s in %.1f seconds." % (entry["addr"], plugin.name, duration))
+            return
+
         self.accounts.append(addr)
         self.logins[addr] = duration
         self.groupmsgs[addr] = {}
+        if sucess:
+            print("%s: successful login as %s in %.1f seconds." % (entry["addr"], plugin.name, duration))
+            self.output.submit_login_result(...)
+        else:
+            self.output.submit_login_failure(...)
+
+        if len(logins) >= num_accounts:
+            self.event_all_logins_complete.set()
 
     def submit_1on1_result(self, addr, sendduration, recvduration):
         self.sending[addr] = sendduration

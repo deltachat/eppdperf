@@ -2,11 +2,27 @@ import time
 import datetime
 import deltachat
 
+class LoginTrackerPlugin:
+    def __init__(self, output):
+        self.output = output
+        self.begin = time.time()
+
+    @account_hookimpl
+    def ac_configure_completed(self, success):
+        """ Called after a configure process completed. """
+        login_duration = time.time() - self.begin
+        self.output.submit_login_result(entry.get("addr"), duration, success=success)
+
 
 class ReceivePlugin:
+    """
+        XXX docs
+    """
     name = "test account"
 
-    @staticmethod
+    def __init__(self):
+        pass
+
     @deltachat.account_hookimpl
     def ac_incoming_message(message):
         received = time.time()
@@ -34,11 +50,21 @@ class ReceivePlugin:
 
 
 class EchoPlugin:
+    """
+        XXX little docs
+    """
     name = "spider"
 
-    @staticmethod
+    def __init__(self):
+        self.queue_results = queue.Queue()
+
+    def get_next_message(self):
+        return self.queue_results.get()
+
     @deltachat.account_hookimpl
     def ac_incoming_message(message):
+        begin = time.time()
+
         message.create_chat()
         addr = message.get_sender_contact().addr
         if message.is_system_message():
@@ -46,11 +72,7 @@ class EchoPlugin:
         elif message.chat.is_group():
             return  # can safely ignore group messages. spider only creates it
         else:
-            msginfo = message.get_message_info()
-            testduration = parse_msg(msginfo).get("tdelta")
-            begin = time.time()
-            message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
-            message.account.output.submit_1on1_result(message.account.get_self_contact().addr, testduration, "timeout")
+            self.queue_results.put(message)
 
 
 def parse_msg(text: str) -> dict:
