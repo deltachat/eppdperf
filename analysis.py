@@ -193,7 +193,8 @@ def main():
                 msgcontent = parse_msg(msg.text)
                 if msg.time_received is None or msgcontent.get("sender") == "spider":
                     continue
-                msgreceived = (msg.time_received - datetime.datetime(1970, 1, 1)).total_seconds()
+                origin = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
+                msgreceived = (msg.time_received - origin).total_seconds()
                 duration = msgreceived - msgcontent.get("begin")
                 print("%s received message from %s after %.1f seconds" % (ac.get_self_contact().addr, msgcontent["sender"], duration))
                 output.submit_groupmsg_result(ac.get_self_contact().addr, msgcontent["sender"], duration)
