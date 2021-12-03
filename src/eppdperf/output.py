@@ -1,7 +1,8 @@
 import os
+from threading import Event
 
 class Output:
-    def __init__(self, outputfile, overwrite):
+    def __init__(self, outputfile, overwrite, num_accounts):
         self.outputfile = outputfile
         self.overwrite = overwrite
         self.accounts = []
@@ -10,11 +11,15 @@ class Output:
         self.receiving = {}
         self.groupadd = {}
         self.groupmsgs = {}
+        self.num_accounts = num_accounts
+        self.logins_completed = Event()
 
     def submit_login_result(self, addr, duration):
         self.accounts.append(addr)
         self.logins[addr] = duration
         self.groupmsgs[addr] = {}
+        if len(self.accounts) == self.num_accounts:
+            self.logins_completed.set()
 
     def submit_1on1_result(self, addr, sendduration, recvduration):
         self.sending[addr] = sendduration

@@ -10,11 +10,11 @@ class TestPlugin:
     :param output: Output object
     """
 
-    name = "test account"
-
-    def __init__(self, account: deltachat.Account, output):
+    def __init__(self, account: deltachat.Account, output, begin):
         self.account = account
         self.output = output
+        self.begin = begin
+        self.name = "test account"
 
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message: deltachat.Message):
@@ -48,6 +48,18 @@ class TestPlugin:
         self.output.submit_1on1_result(receiver, filesendduration, duration)
         self.account.shutdown()
 
+    @deltachat.account_hookimpl
+    def ac_configure_completed(self, success):
+        if success:
+            self.account.start_io()
+            duration = time.time() - self.begin
+            print("%s: successful login as test account in %.1f seconds." %
+                  (self.account.get_self_contact().addr, duration))
+            self.output.submit_login_result(self.account.get_self_contact().addr, duration)
+        else:
+            print("Login failed for %s with password:\n%s" %
+                  (self.account.get_self_contact().addr, self.account.get_config("mail_pw")))
+
 
 class SpiderPlugin:
     """Plugin for the spider deltachat account.
@@ -55,11 +67,12 @@ class SpiderPlugin:
     :param account: the test account object
     :param output: Output object
     """
-    name = "spider"
 
-    def __init__(self, account, output):
+    def __init__(self, account, output, begin):
         self.account = account
         self.output = output
+        self.begin = begin
+        self.name = "spider"
 
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message):
@@ -78,6 +91,17 @@ class SpiderPlugin:
         message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
         # if the response arrives before timeout, this gets overwritten anyway:
         message.account.output.submit_1on1_result(message.account.get_self_contact().addr, testduration, "timeout")
+
+    @deltachat.account_hookimpl
+    def ac_configure_completed(self, success):
+        if success:
+            self.account.start_io()
+            duration = time.time() - self.begin
+            print("%s: successful login as spider in %.1f seconds." %
+                  (self.account.get_self_contact().addr, duration))
+        else:
+            print("Login failed for %s with password:\n%s" %
+                  (self.account.get_self_contact().addr, self.account.get_config("mail_pw")))
 
 
 def parse_msg(text: str) -> dict:

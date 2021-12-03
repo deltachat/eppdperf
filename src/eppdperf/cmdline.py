@@ -63,10 +63,10 @@ def main():
     parser.add_argument("-f", "--testfile", type=str, default="files/ph4nt_einfache_antworten.mp3",
                         help="path to test file, the default file is 15 MB large")
     args = parser.parse_args()
-    output = Output(args.output, args.yes)
     testfile = os.path.join(os.environ.get("PWD"), args.testfile)
 
     credentials, spider = parse_accounts_file(args.accounts_file)
+    output = Output(args.output, args.yes, len(credentials))
     assert spider is not None, "tests need a spider echobot account to run"
 
     # ensuring measurement data directory

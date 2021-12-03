@@ -22,12 +22,10 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
     for entry in credentials:
         try:
             accounts.append(setup_account(output, entry, args.data_dir, TestPlugin))
-        except deltachat.tracker.ConfigureFailed:
-            print("Login failed for %s with password:\n%s" %
-                  (entry["addr"], entry["app_pw"]))
         except AssertionError:
             print("this line doesn't contain valid addr and app_pw: %s" %
                   (entry["line"],))
+    output.logins_completed.wait(timeout=args.timeout)
 
     # create test group. who is in it after 60 seconds?
     begin = time.time()
@@ -134,7 +132,7 @@ def setup_account(output, entry: dict, data_dir: str, plugin) -> deltachat.Accou
 
     ac = deltachat.Account(db_path)
     #ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
-    ac.add_account_plugin(plugin(ac, output))
+    ac.add_account_plugin(plugin(ac, output, begin))
     ac.set_config("addr", entry["addr"])
     ac.set_config("mail_pw", entry["app_pw"])
 
@@ -148,12 +146,8 @@ def setup_account(output, entry: dict, data_dir: str, plugin) -> deltachat.Accou
     ac.set_config("sentbox_watch", "0")
     ac.set_config("bot", "1")
     configtracker = ac.configure()
-    configtracker.wait_finish()
-    ac.start_io()
-    duration = time.time() - begin
-    print("%s: successful login as %s in %.1f seconds." % (entry["addr"], plugin.name, duration))
-    if plugin is not SpiderPlugin:
-        output.submit_login_result(entry.get("addr"), duration)
+    if plugin is SpiderPlugin:
+        configtracker.wait_finish()
     ac.output = output
     return ac
 
@@ -171,4 +165,3 @@ def check_account_with_spider(spac: deltachat.Account, account: deltachat.Accoun
     newfilepath = os.path.join(account.get_blobdir(), os.path.basename(testfile))
     message = chat.prepare_message_file(newfilepath, mime_type="application/octet-stream")
     chat.send_prepared(message)
-
