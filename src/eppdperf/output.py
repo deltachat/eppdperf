@@ -2,7 +2,13 @@ import os
 from threading import Event
 
 class Output:
-    def __init__(self, outputfile, overwrite, num_accounts):
+    """This class tracks the test results and writes them to file. It also sets events when a test is completed.
+
+    :param outputfile: path to a .csv file, where the output is written
+    :param overwrite: whether to automatically overwrite the output file
+    :param num_accounts: how many test account credentials were found in the testaccounts file
+    """
+    def __init__(self, outputfile: str, overwrite: bool, num_accounts: int):
         self.outputfile = outputfile
         self.overwrite = overwrite
         self.accounts = []
@@ -13,25 +19,55 @@ class Output:
         self.groupmsgs = {}
         self.num_accounts = num_accounts
         self.logins_completed = Event()
+        self.groupadd_completed = Event()
+        self.filetest_completed = Event()
 
-    def submit_login_result(self, addr, duration):
+    def submit_login_result(self, addr: str, duration: float):
+        """Submit to output how long the login took. Notifies main thread when all logins are complete.
+
+        :param addr: the email address which successfully logged in
+        :param duration: seconds how long the login took
+        """
         self.accounts.append(addr)
         self.logins[addr] = duration
         self.groupmsgs[addr] = {}
         if len(self.accounts) == self.num_accounts:
             self.logins_completed.set()
 
-    def submit_1on1_result(self, addr, sendduration, recvduration):
+    def submit_filetest_result(self, addr: str, sendduration: float, recvduration):
+        """Submit to output how long the file sending test took. Notifies main thread when all tests are complete.
+
+        :param addr: the email address which successfully sent the file
+        :param sendduration: seconds how long the file sending took
+        :param recvduration: seconds how long the response took. can also be "timeout"
+        """
         self.sending[addr] = sendduration
         self.receiving[addr] = recvduration
+        if len(self.receiving) == len(self.accounts):
+            self.filetest_completed.set()
 
-    def submit_groupadd_result(self, addr, duration):
+    def submit_groupadd_result(self, addr: str, duration: float):
+        """Submit to output how long the group add took. Notifies main thread when all test accounts are in the group.
+
+        :param addr: the email address which was successfully added
+        :param duration: seconds how long the group add took
+        """
         self.groupadd[addr] = duration
+        if len(self.groupadd) == len(self.accounts):
+            self.groupadd_completed.set()
 
-    def submit_groupmsg_result(self, addr, sender, duration):
+    def submit_groupmsg_result(self, addr: str, sender: str, duration: float):
+        """Submit to output how long a group message took.
+
+        :param addr: the email address which received the group message
+        :param sender: the email addres which sent the group message
+        :param duration: seconds how long the message took
+        """
         self.groupmsgs[addr][sender] = duration
 
     def write(self):
+        """Write the results to the ouput file.
+        """
         try:
             f = open(self.outputfile, "x", encoding="utf-8")
         except FileExistsError:
@@ -45,11 +81,6 @@ class Output:
         for addr in self.accounts:
             f.write(addr.split("@")[1])
             f.write(", ")
-
-        #f.write("\naddresses:, ")
-        #for addr in self.accounts:
-        #    f.write(addr)
-        #    f.write(", ")
 
         f.write("\nfilesending:, ")
         for addr in self.accounts:
@@ -83,8 +114,3 @@ class Output:
                 f.write(", ")
 
         f.close()
-
-        # create output file? overwrite?
-        # only write the results at the end of the test
-        # print test results nicely during test
-        #

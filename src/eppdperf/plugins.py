@@ -45,7 +45,7 @@ class TestPlugin:
         # file sending response
         print("%s: test message took %.1f seconds to %s and %.1f seconds back." %
               (receiver, filesendduration, sender, duration))
-        self.output.submit_1on1_result(receiver, filesendduration, duration)
+        self.output.submit_filetest_result(receiver, filesendduration, duration)
         self.account.shutdown()
 
     @deltachat.account_hookimpl
@@ -90,7 +90,7 @@ class SpiderPlugin:
         begin = time.time()
         message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
         # if the response arrives before timeout, this gets overwritten anyway:
-        message.account.output.submit_1on1_result(message.account.get_self_contact().addr, testduration, "timeout")
+        message.account.output.submit_filetest_result(message.account.get_self_contact().addr, testduration, "timeout")
 
     @deltachat.account_hookimpl
     def ac_configure_completed(self, success):
