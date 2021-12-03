@@ -4,6 +4,8 @@ testaccounts.txt
 # virtualenv
 venv/
 __pycache__/
+src/eppdperf.egg-info/
+.eggs
 
 # pycharm
 .idea

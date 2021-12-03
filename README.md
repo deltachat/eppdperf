@@ -1,4 +1,4 @@
-# Provider Perfomance Analysis
+# EPPD Provider Perfomance Analysis
 
 This repository measures the performance of different email providers. It is
 measured with the `analysis.py` script; the output is tracked in the
@@ -19,8 +19,8 @@ accounts.
 ```
 python3 -m venv venv
 . venv/bin/activate
-pip install -r requirements.txt
-./analysis.py -h
+pip install -e .
+eppdperf -h
 ```
 
 ## License
