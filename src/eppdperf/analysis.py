@@ -134,7 +134,7 @@ def setup_account(output, entry: dict, data_dir: str, plugin) -> deltachat.Accou
 
     ac = deltachat.Account(db_path)
     #ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
-    ac.add_account_plugin(plugin())
+    ac.add_account_plugin(plugin(ac, output))
     ac.set_config("addr", entry["addr"])
     ac.set_config("mail_pw", entry["app_pw"])
 

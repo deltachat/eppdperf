@@ -4,49 +4,63 @@ import deltachat
 
 
 class TestPlugin:
+    """ plugin for the deltachat test accounts.
+
+    :param account: the test account object
+    :param output: Output object
+    """
+
     name = "test account"
 
-    def __init__(self):
-        pass
+    def __init__(self, account: deltachat.Account, output):
+        self.account = account
+        self.output = output
 
     @deltachat.account_hookimpl
-    def ac_incoming_message(self, message):
+    def ac_incoming_message(self, message: deltachat.Message):
         received = time.time()
+
         message.create_chat()
         if not message.chat.can_send():
             # if it's a device message or mailing list, we don't need to look at it.
             return
+
         sender = message.get_sender_contact().addr
         receiver = message.account.get_self_contact().addr
+
+        # message parsing
         msgcontent = parse_msg(message.text)
-        firsttravel = msgcontent.get("testduration")
-        secondtravel = received - msgcontent.get("begin")
-        iam = msgcontent.get("sender")
+        filesendduration = msgcontent.get("testduration")
+        duration = received - msgcontent.get("begin")
+        author = msgcontent.get("sender")
+
+        # group add test
         if message.chat.is_group():
-            if iam == "spider":
-                print("%s: joined group chat %s after %.1f seconds" % (receiver, message.chat.get_name(), secondtravel))
+            if author == "spider":
+                print("%s: joined group chat %s after %.1f seconds" % (receiver, message.chat.get_name(), duration))
                 message.chat.send_text("Sender: %s\nBegin: %s" % (receiver, str(time.time())))
-                return  # for now it's enough to just accept the group chat
-            else:
-                return  # when messages by others arrived is checked later by the main thread
+                self.output.submit_groupadd_result(self.account.get_self_contact().addr, duration)
+            return
+
+        # file sending response
         print("%s: test message took %.1f seconds to %s and %.1f seconds back." %
-              (receiver, firsttravel, sender, secondtravel))
-        message.account.output.submit_1on1_result(receiver, firsttravel, secondtravel)
-        message.account.shutdown()
+              (receiver, filesendduration, sender, duration))
+        self.output.submit_1on1_result(receiver, filesendduration, duration)
+        self.account.shutdown()
 
 
 class SpiderPlugin:
     name = "spider"
 
-    def __init__(self):
-        pass
+    def __init__(self, account, output):
+        self.account = account
+        self.output = output
 
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message):
         message.create_chat()
-        addr = message.get_sender_contact().addr
         if message.is_system_message():
-            message.chat.send_text("echoing system message from {}:\n{}".format(addr, message))
+            return  # we don't care about system messages
         elif message.chat.is_group():
             return  # can safely ignore group messages. spider only creates it
         else:
