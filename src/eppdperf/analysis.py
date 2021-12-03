@@ -26,6 +26,24 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
                   (entry["line"],))
     output.logins_completed.wait(timeout=args.timeout)
 
+    # send file test
+    testfilebytes = os.path.getsize(testfile)
+    if testfilebytes > 1024 * 1024:
+        testfilesize = str(round(testfilebytes / (1024 * 1024), 3)) + "MB"
+    else:
+        testfilesize = str(round(testfilebytes / 1024, 3)) + "KB"
+    print("Sending %s test file to spider from all accounts:" % (testfilesize,))
+    begin = time.time()
+    for ac in accounts:
+        check_account_with_spider(spac, ac, testfile)
+    # wait until finished, or timeout
+    output.filetest_completed.wait(timeout=args.timeout)
+    if time.time() >= begin + args.timeout:
+        print("Timeout reached. File sending test failed for")
+        for ac in accounts:
+            if ac.get_self_contact().addr not in output.sending:
+                print(ac.get_self_contact().addr)
+
     # create test group
     begin = time.time()
     print("Creating group " + str(begin))
@@ -46,30 +64,6 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
         print("Not added to group: ")
         for ac in accounts:
             if ac not in group_members:
-                print(ac.get_self_contact().addr)
-
-    # send test messages to spider
-    testfilebytes = os.path.getsize(testfile)
-    if testfilebytes > 1024 * 1024:
-        testfilesize = str(round(testfilebytes / (1024 * 1024), 3)) + "MB"
-    else:
-        testfilesize = str(round(testfilebytes / 1024, 3)) + "KB"
-    print("Sending %s test file to spider from all accounts:" % (testfilesize,))
-    for ac in accounts:
-        if spider is not None:
-            if spider["addr"] is not ac.get_self_contact().addr:
-                check_account_with_spider(spac, ac, testfile)
-                ac.begin = time.time()
-
-    # file sending test
-    for ac in accounts:
-        check_account_with_spider(spac, ac, testfile)
-    # wait until finished, or timeout
-    output.filetest_completed.wait(timeout=args.timeout)
-    if time.time() >= begin + args.timeout:
-        print("Timeout reached. File sending test failed for")
-        for ac in accounts:
-            if ac.get_self_contact().addr not in output.sending:
                 print(ac.get_self_contact().addr)
 
     # shutting down accounts
