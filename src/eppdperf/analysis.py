@@ -33,43 +33,21 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
     group = spac.create_group_chat("Test Group " + str(begin),
                                    contacts=[spac.create_contact(entry["addr"]) for entry in credentials])
     group.send_text("Sender: spider\nBegin: %s" % (str(begin),))
-    output.groupadd_completed.wait(timeout=args.timeout)
+
+    # wait for group messages test, which was initiated by the group creation
+    output.groupmsgs_completed.wait(timeout=args.timeout)
     group_members = []
     for ac in accounts:
         for chat in ac.get_chats():
             if chat.get_name() == group.get_name():
                 group_members.append(ac)
+    if time.time() > begin + args.timeout:
+        print("Timeout reached.", end=" ")
     if len(group_members) is not len(accounts):
-        print("Timeout reached. Not added to group: ")
+        print("Not added to group: ")
         for ac in accounts:
             if ac not in group_members:
                 print(ac.get_self_contact().addr)
-
-    begin = time.time()
-    counter = []
-    for ac in group_members:
-        counter.append(ac)
-    while time.time() < float(begin) + args.timeout and len(counter) > 0:
-        for ac in counter:
-            for chat in ac.get_chats():
-                if chat.get_name() == group.get_name():
-                    grp = chat
-            msgs = grp.get_messages()
-            for msg in msgs:
-                if msg.is_in_seen():
-                    continue
-                msg.mark_seen()
-                msgcontent = parse_msg(msg.text)
-                if msg.time_received is None or msgcontent.get("sender") == "spider":
-                    continue
-                origin = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
-                msgreceived = (msg.time_received - origin).total_seconds()
-                duration = msgreceived - msgcontent.get("begin")
-                print("%s received message from %s after %.1f seconds" %
-                      (ac.get_self_contact().addr, msgcontent["sender"], duration))
-                output.submit_groupmsg_result(ac.get_self_contact().addr, msgcontent["sender"], duration)
-                if len(output.groupmsgs.get(ac.get_self_contact().addr)) == len(group_members) - 1:
-                    counter.remove(ac)
 
     # send test messages to spider
     testfilebytes = os.path.getsize(testfile)

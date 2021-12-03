@@ -40,6 +40,10 @@ class TestPlugin:
                 print("%s: joined group chat %s after %.1f seconds" % (receiver, message.chat.get_name(), duration))
                 message.chat.send_text("Sender: %s\nBegin: %s" % (receiver, str(time.time())))
                 self.output.submit_groupadd_result(self.account.get_self_contact().addr, duration)
+            else:
+                print("%s received message from %s after %.1f seconds" %
+                      (receiver, author, duration))
+                self.output.submit_groupmsg_result(receiver, author, duration)
             return
 
         # file sending response

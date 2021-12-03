@@ -21,6 +21,7 @@ class Output:
         self.logins_completed = Event()
         self.groupadd_completed = Event()
         self.filetest_completed = Event()
+        self.groupmsgs_completed = Event()
 
     def submit_login_result(self, addr: str, duration: float):
         """Submit to output how long the login took. Notifies main thread when all logins are complete.
@@ -57,13 +58,17 @@ class Output:
             self.groupadd_completed.set()
 
     def submit_groupmsg_result(self, addr: str, sender: str, duration: float):
-        """Submit to output how long a group message took.
+        """Submit to output how long a group message took. Notifies main thread when all test messages arrived.
 
         :param addr: the email address which received the group message
         :param sender: the email addres which sent the group message
         :param duration: seconds how long the message took
         """
         self.groupmsgs[addr][sender] = duration
+        for receiver in self.groupmsgs:
+            if len(self.groupmsgs[receiver]) != len(self.accounts) - 1:
+                return
+        self.groupmsgs_completed.set()
 
     def write(self):
         """Write the results to the ouput file.
