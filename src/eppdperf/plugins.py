@@ -61,7 +61,7 @@ class TestPlugin:
             self.output.submit_login_result(self.account.get_self_contact().addr, duration)
         else:
             print("Login failed for %s with password:\n%s" %
-                  (self.account.get_self_contact().addr, self.account.get_config("mail_pw")))
+                  (self.account.get_config("addr"), self.account.get_config("mail_pw")))
 
 
 class SpiderPlugin:
@@ -104,7 +104,7 @@ class SpiderPlugin:
                   (self.account.get_self_contact().addr, duration))
         else:
             print("Login failed for %s with password:\n%s" %
-                  (self.account.get_self_contact().addr, self.account.get_config("mail_pw")))
+                  (self.account.get_config("addr"), self.account.get_config("mail_pw")))
 
 
 def parse_msg(text: str) -> dict:
