@@ -3,7 +3,7 @@ import deltachat
 import time
 import os
 import shutil
-from .plugins import SpiderPlugin, TestPlugin, parse_msg
+from .plugins import SpiderPlugin, TestPlugin
 
 
 def perform_measurements(spider: dict, credentials: list, output, args, testfile: str):

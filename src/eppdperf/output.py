@@ -1,6 +1,7 @@
 import os
 from threading import Event
 
+
 class Output:
     """This class tracks the test results and writes them to file. It also sets events when a test is completed.
 

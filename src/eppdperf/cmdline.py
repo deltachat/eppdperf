@@ -17,7 +17,7 @@ def parse_config_line(line: str):
     """
     if line[0] == "#" or line[0] == "\n":
         return
-    entry = { "line" : line }
+    entry = {"line": line}
     parameters = line.rstrip().split(" ")
     for p in parameters:
         argument = p.partition("=")
