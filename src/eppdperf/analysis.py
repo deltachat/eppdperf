@@ -27,29 +27,23 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
                   (entry["line"],))
     output.logins_completed.wait(timeout=args.timeout)
 
-    # create test group. who is in it after 60 seconds?
+    # create test group
     begin = time.time()
     print("Creating group " + str(begin))
     group = spac.create_group_chat("Test Group " + str(begin),
                                    contacts=[spac.create_contact(entry["addr"]) for entry in credentials])
     group.send_text("Sender: spider\nBegin: %s" % (str(begin),))
+    output.groupadd_completed.wait(timeout=args.timeout)
     group_members = []
-    while time.time() < float(begin) + args.timeout:
-        if len(accounts) == len(group_members):
-            break
-        for ac in accounts:
-            if ac in group_members:
-                continue
-            for chat in ac.get_chats():
-                if chat.get_name() == group.get_name():
-                    group_members.append(ac)
-                    output.submit_groupadd_result(ac.get_self_contact().addr, time.time() - begin)
-    else:
-        print("Timeout reached. Not added to group: ", end="")
+    for ac in accounts:
+        for chat in ac.get_chats():
+            if chat.get_name() == group.get_name():
+                group_members.append(ac)
+    if len(group_members) is not len(accounts):
+        print("Timeout reached. Not added to group: ")
         for ac in accounts:
             if ac not in group_members:
-                print(ac.get_self_contact().addr, end=", ")
-        print()
+                print(ac.get_self_contact().addr)
 
     begin = time.time()
     counter = []
