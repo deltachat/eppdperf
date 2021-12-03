@@ -1,7 +1,6 @@
 
 import deltachat
 import time
-import datetime
 import os
 import shutil
 from .plugins import SpiderPlugin, TestPlugin, parse_msg
@@ -62,26 +61,32 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
                 check_account_with_spider(spac, ac, testfile)
                 ac.begin = time.time()
 
+    # file sending test
+    for ac in accounts:
+        check_account_with_spider(spac, ac, testfile)
     # wait until finished, or timeout
-    while len(accounts) > 0:
+    output.filetest_completed.wait(timeout=args.timeout)
+    if time.time() >= begin + args.timeout:
+        print("Timeout reached. File sending test failed for")
         for ac in accounts:
-            if ac._shutdown_event.is_set():
-                accounts.remove(ac)
-            elif time.time() > ac.begin + args.timeout:
-                print("%d seconds timeout while waiting for echo to %s - test failed." %
-                      (args.timeout, ac.get_self_contact().addr))
-                output.submit_filetest_result(ac.get_self_contact().addr, "timeout", "timeout")
-                ac.shutdown()
-                ac.wait_shutdown()
+            if ac.get_self_contact().addr not in output.sending:
+                print(ac.get_self_contact().addr)
+
+    # shutting down accounts
+    for ac in accounts:
+        ac.shutdown()
     if not args.yes:
         answer = input("Do you want to delete all messages in the %s account? [y/N]" % (spider["addr"],))
         if answer.lower() == "y":
             for chat in spac.get_chats():
                 spac.delete_messages(chat.get_messages())
     else:
+        print("deleting all messages in the %s account..." % (spider["addr"],))
         for chat in spac.get_chats():
             spac.delete_messages(chat.get_messages())
     spac.shutdown()
+    for ac in accounts:
+        ac.wait_shutdown()
     spac.wait_shutdown()
     output.write()
 

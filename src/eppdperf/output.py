@@ -35,17 +35,23 @@ class Output:
         if len(self.accounts) == self.num_accounts:
             self.logins_completed.set()
 
-    def submit_filetest_result(self, addr: str, sendduration: float, recvduration):
-        """Submit to output how long the file sending test took. Notifies main thread when all tests are complete.
+    def submit_receive_result(self, addr: str, recvduration: float):
+        """Submit to output how long the receiving test took. Notifies main thread when all tests are complete.
 
         :param addr: the email address which successfully sent the file
-        :param sendduration: seconds how long the file sending took
         :param recvduration: seconds how long the response took. can also be "timeout"
         """
-        self.sending[addr] = sendduration
         self.receiving[addr] = recvduration
         if len(self.receiving) == len(self.accounts):
             self.filetest_completed.set()
+
+    def submit_filetest_result(self, addr: str, sendduration: float):
+        """Submit to output how long the file sending test took.
+
+        :param addr: the email address which successfully sent the file
+        :param sendduration: seconds how long the file sending took
+        """
+        self.sending[addr] = sendduration
 
     def submit_groupadd_result(self, addr: str, duration: float):
         """Submit to output how long the group add took. Notifies main thread when all test accounts are in the group.
@@ -89,12 +95,18 @@ class Output:
 
         f.write("\nfilesending:, ")
         for addr in self.accounts:
-            f.write(str(self.sending[addr]))
+            try:
+                f.write(str(self.sending[addr]))
+            except KeyError:
+                f.write("timeout")
             f.write(", ")
 
         f.write("\nreceiving:, ")
         for addr in self.accounts:
-            f.write(str(self.receiving[addr]))
+            try:
+                f.write(str(self.receiving[addr]))
+            except KeyError:
+                f.write("timeout")
             f.write(", ")
 
         f.write("\ngroupadd:, ")

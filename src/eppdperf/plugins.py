@@ -49,8 +49,7 @@ class TestPlugin:
         # file sending response
         print("%s: test message took %.1f seconds to %s and %.1f seconds back." %
               (receiver, filesendduration, sender, duration))
-        self.output.submit_filetest_result(receiver, filesendduration, duration)
-        self.account.shutdown()
+        self.output.submit_receive_result(receiver, duration)
 
     @deltachat.account_hookimpl
     def ac_configure_completed(self, success):
@@ -79,7 +78,7 @@ class SpiderPlugin:
         self.name = "spider"
 
     @deltachat.account_hookimpl
-    def ac_incoming_message(self, message):
+    def ac_incoming_message(self, message: deltachat.Message):
         message.create_chat()
 
         if message.is_system_message():
@@ -94,7 +93,7 @@ class SpiderPlugin:
         begin = time.time()
         message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
         # if the response arrives before timeout, this gets overwritten anyway:
-        message.account.output.submit_filetest_result(message.account.get_self_contact().addr, testduration, "timeout")
+        self.output.submit_filetest_result(message.get_sender_contact().addr, testduration)
 
     @deltachat.account_hookimpl
     def ac_configure_completed(self, success):
