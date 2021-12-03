@@ -1,6 +1,21 @@
 
-def perform_measurements(...):
+import deltachat
+import time
+import datetime
+import os
+import shutil
+from .plugins import EchoPlugin, ReceivePlugin, parse_msg
 
+
+def perform_measurements(spider: dict, credentials: list, output, args, testfile: str):
+    """ Run several performance tests with the given accounts.
+
+    :param output: Output object which keeps track of the test results and writes them to file.
+    :param spider: entry dictionary for the spider account.
+    :param args: Namespace object; args as obtained through ArgumentParser.
+    :param testfile: the path to the testfile as string.
+    :param credentials: a list of entry dictionaries, one per account.
+    """
     # setup spider and test accounts
     spac = setup_account(output, spider, args.data_dir, EchoPlugin)
     accounts = []
@@ -58,7 +73,8 @@ def perform_measurements(...):
                 origin = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
                 msgreceived = (msg.time_received - origin).total_seconds()
                 duration = msgreceived - msgcontent.get("begin")
-                print("%s received message from %s after %.1f seconds" % (ac.get_self_contact().addr, msgcontent["sender"], duration))
+                print("%s received message from %s after %.1f seconds" %
+                      (ac.get_self_contact().addr, msgcontent["sender"], duration))
                 output.submit_groupmsg_result(ac.get_self_contact().addr, msgcontent["sender"], duration)
                 if len(output.groupmsgs.get(ac.get_self_contact().addr)) == len(group_members) - 1:
                     counter.remove(ac)
@@ -68,7 +84,7 @@ def perform_measurements(...):
     if testfilebytes > 1024 * 1024:
         testfilesize = str(round(testfilebytes / (1024 * 1024), 3)) + "MB"
     else:
-        testfilesize = str(round(testfilebytes / (1024), 3)) + "KB"
+        testfilesize = str(round(testfilebytes / 1024, 3)) + "KB"
     print("Sending %s test file to spider from all accounts:" % (testfilesize,))
     for ac in accounts:
         if spider is not None:
@@ -90,13 +106,14 @@ def perform_measurements(...):
     if not args.yes:
         answer = input("Do you want to delete all messages in the %s account? [y/N]" % (spider["addr"],))
         if answer.lower() == "y":
-            spac.delete_messages(spac.get_chats())
+            for chat in spac.get_chats():
+                spac.delete_messages(chat.get_messages())
         spac.shutdown()
-        spac.wait_shutdown()
     output.write()
+    spac.wait_shutdown()
 
 
-def setup_account(output: object, entry: dict, data_dir: str, plugin: object) -> deltachat.Account:
+def setup_account(output, entry: dict, data_dir: str, plugin) -> deltachat.Account:
     """Creates a Delta Chat account for a given credentials dictionary.
 
     :param output: the Output object which takes care of the results
@@ -144,7 +161,6 @@ def check_account_with_spider(spac: deltachat.Account, account: deltachat.Accoun
     :param spac: the deltachat.Account object of the spider.
     :param account: a deltachat.Account object to check.
     :param testfile: path to test file, the default is 15 MB large
-    :param timeout: seconds until the script gives up
    """
     chat = account.create_chat(spac)
     # need to copy testfile to blobdir to avoid error

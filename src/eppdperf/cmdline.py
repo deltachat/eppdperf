@@ -2,16 +2,11 @@
 
 import argparse
 import os
-import shutil
 import tempfile
-import time
-import datetime
 from typing import Tuple
 
-import deltachat
-
-from .plugins import EchoPlugin, ReceivePlugin, parse_msg
 from .output import Output
+from .analysis import perform_measurements
 
 
 def parse_config_line(line: str):
@@ -65,8 +60,8 @@ def main():
                         help="output file for the results in CSV format")
     parser.add_argument("-t", "--timeout", type=int, default=90,
                         help="seconds after which tests are aborted")
-    parser.add_argument("-f", "--testfile", type=str, default="ph4nt_einfache_antworten.mp3",
-                        help="path to test file, the default file 15 MB large")
+    parser.add_argument("-f", "--testfile", type=str, default="files/ph4nt_einfache_antworten.mp3",
+                        help="path to test file, the default file is 15 MB large")
     args = parser.parse_args()
     output = Output(args.output, args.yes)
     testfile = os.path.join(os.environ.get("PWD"), args.testfile)
@@ -81,7 +76,7 @@ def main():
         # rm -r data_dir at the end of the script? ask for removal?
     print("Storing account data in %s" % (args.data_dir,))
 
-    perform_measurements(...)
+    perform_measurements(spider, credentials, output, args, testfile)
 
 
 if __name__ == "__main__":
