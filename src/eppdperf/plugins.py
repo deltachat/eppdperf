@@ -4,7 +4,7 @@ import deltachat
 
 
 class TestPlugin:
-    """ plugin for the deltachat test accounts.
+    """Plugin for the deltachat test accounts.
 
     :param account: the test account object
     :param output: Output object
@@ -50,6 +50,11 @@ class TestPlugin:
 
 
 class SpiderPlugin:
+    """Plugin for the spider deltachat account.
+
+    :param account: the test account object
+    :param output: Output object
+    """
     name = "spider"
 
     def __init__(self, account, output):
@@ -59,16 +64,20 @@ class SpiderPlugin:
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message):
         message.create_chat()
+
         if message.is_system_message():
             return  # we don't care about system messages
-        elif message.chat.is_group():
+
+        if message.chat.is_group():
             return  # can safely ignore group messages. spider only creates it
-        else:
-            msginfo = message.get_message_info()
-            testduration = parse_msg(msginfo).get("tdelta")
-            begin = time.time()
-            message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
-            message.account.output.submit_1on1_result(message.account.get_self_contact().addr, testduration, "timeout")
+
+        # send response to file sending test
+        msginfo = message.get_message_info()
+        testduration = parse_msg(msginfo).get("tdelta")
+        begin = time.time()
+        message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
+        # if the response arrives before timeout, this gets overwritten anyway:
+        message.account.output.submit_1on1_result(message.account.get_self_contact().addr, testduration, "timeout")
 
 
 def parse_msg(text: str) -> dict:
