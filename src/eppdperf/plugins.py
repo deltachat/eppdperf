@@ -3,12 +3,14 @@ import datetime
 import deltachat
 
 
-class ReceivePlugin:
+class TestPlugin:
     name = "test account"
 
-    @staticmethod
+    def __init__(self):
+        pass
+
     @deltachat.account_hookimpl
-    def ac_incoming_message(message):
+    def ac_incoming_message(self, message):
         received = time.time()
         message.create_chat()
         if not message.chat.can_send():
@@ -33,12 +35,14 @@ class ReceivePlugin:
         message.account.shutdown()
 
 
-class EchoPlugin:
+class SpiderPlugin:
     name = "spider"
 
-    @staticmethod
+    def __init__(self):
+        pass
+
     @deltachat.account_hookimpl
-    def ac_incoming_message(message):
+    def ac_incoming_message(self, message):
         message.create_chat()
         addr = message.get_sender_contact().addr
         if message.is_system_message():

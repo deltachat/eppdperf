@@ -4,7 +4,7 @@ import time
 import datetime
 import os
 import shutil
-from .plugins import EchoPlugin, ReceivePlugin, parse_msg
+from .plugins import SpiderPlugin, TestPlugin, parse_msg
 
 
 def perform_measurements(spider: dict, credentials: list, output, args, testfile: str):
@@ -17,11 +17,11 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
     :param credentials: a list of entry dictionaries, one per account.
     """
     # setup spider and test accounts
-    spac = setup_account(output, spider, args.data_dir, EchoPlugin)
+    spac = setup_account(output, spider, args.data_dir, SpiderPlugin)
     accounts = []
     for entry in credentials:
         try:
-            accounts.append(setup_account(output, entry, args.data_dir, ReceivePlugin))
+            accounts.append(setup_account(output, entry, args.data_dir, TestPlugin))
         except deltachat.tracker.ConfigureFailed:
             print("Login failed for %s with password:\n%s" %
                   (entry["addr"], entry["app_pw"]))
@@ -108,9 +108,12 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
         if answer.lower() == "y":
             for chat in spac.get_chats():
                 spac.delete_messages(chat.get_messages())
-        spac.shutdown()
-    output.write()
+    else:
+        for chat in spac.get_chats():
+            spac.delete_messages(chat.get_messages())
+    spac.shutdown()
     spac.wait_shutdown()
+    output.write()
 
 
 def setup_account(output, entry: dict, data_dir: str, plugin) -> deltachat.Account:
@@ -125,13 +128,13 @@ def setup_account(output, entry: dict, data_dir: str, plugin) -> deltachat.Accou
     assert entry.get("addr") and entry.get("app_pw")
 
     begin = time.time()
-    # create deltachat.Account
+
     os.mkdir(os.path.join(data_dir, entry["addr"]))
     db_path = os.path.join(data_dir, entry["addr"], "db.sqlite")
 
     ac = deltachat.Account(db_path)
     #ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
-    ac.add_account_plugin(plugin)
+    ac.add_account_plugin(plugin())
     ac.set_config("addr", entry["addr"])
     ac.set_config("mail_pw", entry["app_pw"])
 
@@ -149,7 +152,7 @@ def setup_account(output, entry: dict, data_dir: str, plugin) -> deltachat.Accou
     ac.start_io()
     duration = time.time() - begin
     print("%s: successful login as %s in %.1f seconds." % (entry["addr"], plugin.name, duration))
-    if plugin is not EchoPlugin:
+    if plugin is not SpiderPlugin:
         output.submit_login_result(entry.get("addr"), duration)
     ac.output = output
     return ac
