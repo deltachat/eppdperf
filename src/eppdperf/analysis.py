@@ -1,4 +1,3 @@
-
 import deltachat
 import time
 import os
@@ -17,14 +16,23 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
     """
     # setup spider and test accounts
     spac = setup_account(output, spider, args.data_dir, SpiderPlugin)
-    accounts = []
+    tried_accounts = []
+    begin = time.time()
     for entry in credentials:
         try:
-            accounts.append(setup_account(output, entry, args.data_dir, TestPlugin))
+            tried_accounts.append(setup_account(output, entry, args.data_dir, TestPlugin))
         except AssertionError:
             print("this line doesn't contain valid addr and app_pw: %s" %
                   (entry["line"],))
     output.logins_completed.wait(timeout=args.timeout)
+    accounts = []
+    if time.time() > begin + args.timeout:
+        print("Timeout reached. Not configured:")
+        for account in tried_accounts:
+            if not account.is_configured():
+                print(account.get_config("addr"))
+            else:
+                accounts.append(account)
 
     # send file test
     testfilebytes = os.path.getsize(testfile)
@@ -134,5 +142,5 @@ def check_account_with_spider(spac: deltachat.Account, account: deltachat.Accoun
     # need to copy testfile to blobdir to avoid error
     shutil.copy(testfile, account.get_blobdir())
     newfilepath = os.path.join(account.get_blobdir(), os.path.basename(testfile))
-    message = chat.prepare_message_file(newfilepath, mime_type="application/octet-stream")
+    message = chat.prepare_message_file(newfilepath)
     chat.send_prepared(message)
