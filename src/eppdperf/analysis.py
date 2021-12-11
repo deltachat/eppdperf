@@ -28,11 +28,11 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
     accounts = []
     if time.time() > begin + args.timeout:
         print("Timeout reached. Not configured:")
-        for account in tried_accounts:
-            if not account.is_configured():
-                print(account.get_config("addr"))
-            else:
-                accounts.append(account)
+    for account in tried_accounts:
+        if not account.is_configured():
+            print(account.get_config("addr"))
+        else:
+            accounts.append(account)
 
     # send file test
     testfilebytes = os.path.getsize(testfile)
