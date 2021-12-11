@@ -62,6 +62,8 @@ def main():
                         help="seconds after which tests are aborted")
     parser.add_argument("-f", "--testfile", type=str, default="files/ph4nt_einfache_antworten.mp3",
                         help="path to test file, the default file is 15 MB large")
+    parser.add_argument("-v", "--debug", type=str, default="",
+                        help="show deltachat logs for specific account")
     args = parser.parse_args()
     testfile = os.path.join(os.environ.get("PWD"), args.testfile)
 

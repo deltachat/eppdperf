@@ -15,12 +15,12 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
     :param credentials: a list of entry dictionaries, one per account.
     """
     # setup spider and test accounts
-    spac = setup_account(output, spider, args.data_dir, SpiderPlugin)
+    spac = setup_account(output, spider, args.data_dir, SpiderPlugin, args.debug)
     tried_accounts = []
     begin = time.time()
     for entry in credentials:
         try:
-            tried_accounts.append(setup_account(output, entry, args.data_dir, TestPlugin))
+            tried_accounts.append(setup_account(output, entry, args.data_dir, TestPlugin, args.debug))
         except AssertionError:
             print("this line doesn't contain valid addr and app_pw: %s" %
                   (entry["line"],))
@@ -93,7 +93,7 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
     output.write()
 
 
-def setup_account(output, entry: dict, data_dir: str, plugin) -> deltachat.Account:
+def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> deltachat.Account:
     """Creates a Delta Chat account for a given credentials dictionary.
 
     :param output: the Output object which takes care of the results
@@ -101,6 +101,7 @@ def setup_account(output, entry: dict, data_dir: str, plugin) -> deltachat.Accou
         passed to this script
     :param entry: a dictionary with at least an "addr" and a "app_pw" key
     :param plugin: a plugin class which the bot will use
+    :param debug: email address to debug
     """
     assert entry.get("addr") and entry.get("app_pw")
 
@@ -110,7 +111,8 @@ def setup_account(output, entry: dict, data_dir: str, plugin) -> deltachat.Accou
     db_path = os.path.join(data_dir, entry["addr"], "db.sqlite")
 
     ac = deltachat.Account(db_path)
-    #ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
+    if entry.get("addr") == debug:
+        ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
     ac.add_account_plugin(plugin(ac, output, begin))
     ac.set_config("addr", entry["addr"])
     ac.set_config("mail_pw", entry["app_pw"])
