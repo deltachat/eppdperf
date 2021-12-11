@@ -27,3 +27,8 @@ eppdperf -h
 
 Das Lied "Einfache Antworten" von [ph4nt](ph4nt24.bandcamp.com) steht unter [CC
 BY-SA 3.0.](https://creativecommons.org/licenses/by-sa/3.0/)
+
+Das Buch "Das Geheimnis des Inquisitors" von [Nami
+Lefherz](https://lefherz.net) steht unter [CC BY
+4.0](https://creativecommons.org/licenses/by/4.0/).
+
