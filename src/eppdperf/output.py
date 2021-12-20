@@ -96,6 +96,10 @@ class Output:
             f.write(addr.split("@")[1])
             f.write(", ")
 
+        f.write("\ntime to login (in seconds):, ")
+        for addr in self.accounts:
+            f.write("%s, " % (self.logins[addr],))
+
         f.write("\nsent %s file (in seconds):, " % (self.filesize,))
         for addr in self.accounts:
             try:
@@ -124,5 +128,9 @@ class Output:
                 except KeyError:
                     f.write("timeout")
                 f.write(", ")
+
+        f.write("\nreceived messages from other providers:, ")
+        for addr in self.accounts:
+            f.write(str(int((len(self.groupmsgs.get(addr)) / (len(self.accounts) - 1))) * 100) + "%, ")
 
         f.close()
