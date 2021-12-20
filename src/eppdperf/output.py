@@ -8,10 +8,12 @@ class Output:
     :param outputfile: path to a .csv file, where the output is written
     :param overwrite: whether to automatically overwrite the output file
     :param num_accounts: how many test account credentials were found in the testaccounts file
+    :param filesize: size of file sent during the filetest
     """
-    def __init__(self, outputfile: str, overwrite: bool, num_accounts: int):
+    def __init__(self, outputfile: str, overwrite: bool, num_accounts: int, filesize: str):
         self.outputfile = outputfile
         self.overwrite = overwrite
+        self.filesize = filesize
         self.accounts = []
         self.logins = {}
         self.sending = {}
@@ -89,12 +91,12 @@ class Output:
                     return
             os.system("rm " + self.outputfile)
             f = open(self.outputfile, "x", encoding="utf-8")
-        f.write("domains:, ")
+        f.write("test accounts (by provider):, ")
         for addr in self.accounts:
             f.write(addr.split("@")[1])
             f.write(", ")
 
-        f.write("\nfilesending:, ")
+        f.write("\nsent %s file (in seconds):, " % (self.filesize,))
         for addr in self.accounts:
             try:
                 f.write(str(self.sending[addr]))
@@ -102,15 +104,7 @@ class Output:
                 f.write("timeout")
             f.write(", ")
 
-        f.write("\nreceiving:, ")
-        for addr in self.accounts:
-            try:
-                f.write(str(self.receiving[addr]))
-            except KeyError:
-                f.write("timeout")
-            f.write(", ")
-
-        f.write("\ngroupadd:, ")
+        f.write("\nadded to groups (in seconds):, ")
         for addr in self.accounts:
             if addr not in self.groupadd:
                 f.write("timeout, ")
@@ -119,7 +113,7 @@ class Output:
             f.write(", ")
 
         for addr in self.accounts:
-            f.write("\n%s:, " % (addr.split("@")[1],))
+            f.write("\nreceived by %s (in seconds):, " % (addr.split("@")[1],))
             groupresults = self.groupmsgs.get(addr)
             for ac in self.accounts:
                 if addr == ac:

@@ -66,9 +66,14 @@ def main():
                         help="show deltachat logs for specific account")
     args = parser.parse_args()
     testfile = os.path.join(os.environ.get("PWD"), args.testfile)
+    testfilebytes = os.path.getsize(testfile)
+    if testfilebytes > 1024 * 1024:
+        testfilesize = str(round(testfilebytes / (1024 * 1024), 3)) + "MB"
+    else:
+        testfilesize = str(round(testfilebytes / 1024, 3)) + "KB"
 
     credentials, spider = parse_accounts_file(args.accounts_file)
-    output = Output(args.output, args.yes, len(credentials))
+    output = Output(args.output, args.yes, len(credentials), testfilesize)
     assert spider is not None, "tests need a spider echobot account to run"
 
     # ensuring measurement data directory
@@ -78,7 +83,7 @@ def main():
         # rm -r data_dir at the end of the script? ask for removal?
     print("Storing account data in %s" % (args.data_dir,))
 
-    perform_measurements(spider, credentials, output, args, testfile)
+    perform_measurements(spider, credentials, output, args, testfile, testfilesize)
 
 
 if __name__ == "__main__":

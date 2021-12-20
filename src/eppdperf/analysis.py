@@ -5,14 +5,15 @@ import shutil
 from .plugins import SpiderPlugin, TestPlugin
 
 
-def perform_measurements(spider: dict, credentials: list, output, args, testfile: str):
+def perform_measurements(spider: dict, credentials: list, output, args, testfile: str, testfilesize: str):
     """ Run several performance tests with the given accounts.
 
     :param output: Output object which keeps track of the test results and writes them to file.
     :param spider: entry dictionary for the spider account.
     :param args: Namespace object; args as obtained through ArgumentParser.
-    :param testfile: the path to the testfile as string.
+    :param testfile: the path to the testfile.
     :param credentials: a list of entry dictionaries, one per account.
+    :param testfilesize: size of the testfile.
     """
     # setup spider and test accounts
     spac = setup_account(output, spider, args.data_dir, SpiderPlugin, args.debug)
@@ -35,11 +36,6 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
             accounts.append(account)
 
     # send file test
-    testfilebytes = os.path.getsize(testfile)
-    if testfilebytes > 1024 * 1024:
-        testfilesize = str(round(testfilebytes / (1024 * 1024), 3)) + "MB"
-    else:
-        testfilesize = str(round(testfilebytes / 1024, 3)) + "KB"
     print("Sending %s test file to spider from all accounts:" % (testfilesize,))
     begin = time.time()
     for ac in accounts:
