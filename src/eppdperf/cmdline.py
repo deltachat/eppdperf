@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
-import os
 import tempfile
 from typing import Tuple
+from datetime import datetime
 
 from .output import Output
-from .analysis import perform_measurements
+from .analysis import grouptest, filetest, setup_test_accounts, shutdown_accounts
 
 
 def parse_config_line(line: str):
@@ -50,13 +50,15 @@ def parse_accounts_file(accounts_file: str) -> Tuple[list, dict]:
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("command", choices=["login", "group", "file", "size", "recipients"],
+                        help="Which test to perform")
     parser.add_argument("-y", "--yes", action="store_true", default=False,
                         help="always answer yes if prompted")
     parser.add_argument("-a", "--accounts_file", help="a file containing mail accounts",
                         default="testaccounts.txt")
     parser.add_argument("-d", "--data_dir", help="directory for the account data",
                         default=None)
-    parser.add_argument("-o", "--output", type=str, default="performance.csv",
+    parser.add_argument("-o", "--output", type=str, default=None,
                         help="output file for the results in CSV format")
     parser.add_argument("-t", "--timeout", type=int, default=90,
                         help="seconds after which tests are aborted")
@@ -65,25 +67,29 @@ def main():
     parser.add_argument("-v", "--debug", type=str, default="",
                         help="show deltachat logs for specific account")
     args = parser.parse_args()
-    testfile = os.path.join(os.environ.get("PWD"), args.testfile)
-    testfilebytes = os.path.getsize(testfile)
-    if testfilebytes > 1024 * 1024:
-        testfilesize = str(round(testfilebytes / (1024 * 1024), 3)) + "MB"
-    else:
-        testfilesize = str(round(testfilebytes / 1024, 3)) + "KB"
 
     credentials, spider = parse_accounts_file(args.accounts_file)
-    output = Output(args.output, args.yes, len(credentials), testfilesize)
+    if args.output is None:
+        args.output = "%s-%s.csv" % (args.command, datetime.now().strftime("%Y-%m-%d"))
+    output = Output(args, len(credentials))
     assert spider is not None, "tests need a spider echobot account to run"
 
-    # ensuring measurement data directory
+    # ensuring account data directory
     if args.data_dir is None:
         tempdir = tempfile.TemporaryDirectory(prefix="perfanal")
         args.data_dir = tempdir.name
-        # rm -r data_dir at the end of the script? ask for removal?
     print("Storing account data in %s" % (args.data_dir,))
 
-    perform_measurements(spider, credentials, output, args, testfile, testfilesize)
+    spac, accounts = setup_test_accounts(spider, credentials, args, output)
+
+    if args.command == "group":
+        grouptest(spac, output, accounts, args.timeout)
+
+    if args.command == "file":
+        filetest(spac, output, accounts, args.timeout, args.testfile)
+
+    shutdown_accounts(args, accounts, spac)
+    output.write()
 
 
 if __name__ == "__main__":

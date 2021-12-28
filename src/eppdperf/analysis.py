@@ -5,17 +5,94 @@ import shutil
 from .plugins import SpiderPlugin, TestPlugin
 
 
-def perform_measurements(spider: dict, credentials: list, output, args, testfile: str, testfilesize: str):
-    """ Run several performance tests with the given accounts.
+def grouptest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int):
+    """Add all test accounts to a group; all test accounts then write to it; wait until test complete or timeout.
 
-    :param output: Output object which keeps track of the test results and writes them to file.
-    :param spider: entry dictionary for the spider account.
-    :param args: Namespace object; args as obtained through ArgumentParser.
-    :param testfile: the path to the testfile.
-    :param credentials: a list of entry dictionaries, one per account.
-    :param testfilesize: size of the testfile.
+    :param spac: spider account which adds everyone to the group initially
+    :param output: Output object which gathers the test results
+    :param accounts: test accounts
+    :param timeout: timeout in seconds
     """
-    # setup spider and test accounts
+    # create test group
+    begin = time.time()
+    print("Creating group " + str(begin))
+    group = spac.create_group_chat("Test Group " + str(begin),
+                                   contacts=[spac.create_contact(ac.get_config("addr")) for ac in accounts])
+    group.send_text("Sender: spider\nBegin: %s" % (str(begin),))
+
+    # The test accounts send messages to the group in the background; see plugins.TestPlugin.ac_incoming_message
+    output.groupmsgs_completed.wait(timeout=timeout)
+
+    group_members = []
+    for ac in accounts:
+        for chat in ac.get_chats():
+            if chat.get_name() == group.get_name():
+                group_members.append(ac)
+    if time.time() > begin + timeout:
+        print("Timeout reached.", end=" ")
+    if len(group_members) is not len(accounts):
+        print("Not added to group: ")
+        for ac in accounts:
+            if ac not in group_members:
+                print(ac.get_self_contact().addr)
+
+
+def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int, testfile: str):
+    """All test accounts send a test file to the spider.
+
+    :param spac: spider account to which the file is sent
+    :param output: Output object which gathers the test results
+    :param accounts: test accounts
+    :param timeout: timeout in seconds
+    :param testfile: absolute path to the test file
+    """
+    # send file test
+    print("Sending %s test file to spider from all accounts:" % (get_file_size(testfile),))
+    begin = time.time()
+    for ac in accounts:
+        send_test_file(spac, ac, testfile)
+    # wait until finished, or timeout
+    output.filetest_completed.wait(timeout=timeout)
+    if time.time() >= begin + timeout:
+        print("Timeout reached. File sending test failed for")
+        for ac in accounts:
+            if ac.get_self_contact().addr not in output.sending:
+                print(ac.get_self_contact().addr)
+
+
+def shutdown_accounts(args, accounts: [deltachat.Account], spac: deltachat.Account):
+    """Shut down all DeltaChat accounts and wait until its done.
+
+    :param args: command line arguments
+    :param accounts: the test accounts
+    :param spac: the spider account
+    """
+    for ac in accounts:
+        ac.shutdown()
+    if not args.yes:
+        answer = input("Do you want to delete all messages in the %s account? [y/N]" % (spac.get_config("addr"),))
+        if answer.lower() == "y":
+            for chat in spac.get_chats():
+                spac.delete_messages(chat.get_messages())
+    else:
+        print("deleting all messages in the %s account..." % (spac.get_config("addr"),))
+        for chat in spac.get_chats():
+            spac.delete_messages(chat.get_messages())
+    spac.shutdown()
+    for ac in accounts:
+        ac.wait_shutdown()
+    spac.wait_shutdown()
+
+
+def setup_test_accounts(spider: dict, credentials: [dict], args, output) -> (deltachat.Account, [deltachat.Account]):
+    """Setup spider and test accounts.
+
+    :param spider: an entry dict
+    :param credentials: a list of entry dicts
+    :param args: the command line arguments
+    :param output: output object
+    :return: the spider and test accounts
+    """
     spac = setup_account(output, spider, args.data_dir, SpiderPlugin, args.debug)
     tried_accounts = []
     begin = time.time()
@@ -34,64 +111,7 @@ def perform_measurements(spider: dict, credentials: list, output, args, testfile
             print(account.get_config("addr"))
         else:
             accounts.append(account)
-
-    # create test group
-    begin = time.time()
-    print("Creating group " + str(begin))
-    group = spac.create_group_chat("Test Group " + str(begin),
-                                   contacts=[spac.create_contact(entry["addr"]) for entry in credentials])
-    group.send_text("Sender: spider\nBegin: %s" % (str(begin),))
-
-    # wait for group messages test, which was initiated by the group creation
-    output.groupmsgs_completed.wait(timeout=args.timeout)
-    group_members = []
-    for ac in accounts:
-        for chat in ac.get_chats():
-            if chat.get_name() == group.get_name():
-                group_members.append(ac)
-    if time.time() > begin + args.timeout:
-        print("Timeout reached.", end=" ")
-    if len(group_members) is not len(accounts):
-        print("Not added to group: ")
-        for ac in accounts:
-            if ac not in group_members:
-                print(ac.get_self_contact().addr)
-
-    # send file test
-    testfilebytes = os.path.getsize(testfile)
-    if testfilebytes > 1024 * 1024:
-        testfilesize = str(round(testfilebytes / (1024 * 1024), 3)) + "MB"
-    else:
-        testfilesize = str(round(testfilebytes / 1024, 3)) + "KB"
-    print("Sending %s test file to spider from all accounts:" % (testfilesize,))
-    begin = time.time()
-    for ac in accounts:
-        check_account_with_spider(spac, ac, testfile)
-    # wait until finished, or timeout
-    output.filetest_completed.wait(timeout=args.timeout)
-    if time.time() >= begin + args.timeout:
-        print("Timeout reached. File sending test failed for")
-        for ac in accounts:
-            if ac.get_self_contact().addr not in output.sending:
-                print(ac.get_self_contact().addr)
-
-    # shutting down accounts
-    for ac in accounts:
-        ac.shutdown()
-    if not args.yes:
-        answer = input("Do you want to delete all messages in the %s account? [y/N]" % (spider["addr"],))
-        if answer.lower() == "y":
-            for chat in spac.get_chats():
-                spac.delete_messages(chat.get_messages())
-    else:
-        print("deleting all messages in the %s account..." % (spider["addr"],))
-        for chat in spac.get_chats():
-            spac.delete_messages(chat.get_messages())
-    spac.shutdown()
-    for ac in accounts:
-        ac.wait_shutdown()
-    spac.wait_shutdown()
-    output.write()
+    return spac, accounts
 
 
 def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> deltachat.Account:
@@ -134,12 +154,12 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> del
     return ac
 
 
-def check_account_with_spider(spac: deltachat.Account, account: deltachat.Account, testfile: str):
-    """Send a message to spider and check if a reply arrives.
+def send_test_file(spac: deltachat.Account, account: deltachat.Account, testfile: str):
+    """Send the test file to spider.
 
-    :param spac: the deltachat.Account object of the spider.
-    :param account: a deltachat.Account object to check.
-    :param testfile: path to test file, the default is 15 MB large
+    :param spac: spider account the file is sent to.
+    :param account: test account which sends the file
+    :param testfile: absolute path to test file, the default is 15 MB large
    """
     chat = account.create_chat(spac)
     # need to copy testfile to blobdir to avoid error
@@ -147,3 +167,17 @@ def check_account_with_spider(spac: deltachat.Account, account: deltachat.Accoun
     newfilepath = os.path.join(account.get_blobdir(), os.path.basename(testfile))
     message = chat.prepare_message_file(newfilepath)
     chat.send_prepared(message)
+
+
+def get_file_size(testfile: str) -> str:
+    """Return the size of a file
+
+    :param testfile: absolute path to the file
+    :return: string with human readable file size
+    """
+    testfile = os.path.join(os.environ.get("PWD"), testfile)
+    testfilebytes = os.path.getsize(testfile)
+    if testfilebytes > 1024 * 1024:
+        return str(round(testfilebytes / (1024 * 1024), 3)) + "MB"
+    else:
+        return str(round(testfilebytes / 1024, 3)) + "KB"
