@@ -108,7 +108,7 @@ class Output:
                 f.write("timeout")
             f.write(", ")
 
-        f.write("\nadded to groups (in seconds):, ")
+        f.write("\nadded to group (in seconds):, ")
         for addr in self.accounts:
             if addr not in self.groupadd:
                 f.write("timeout, ")
@@ -131,6 +131,7 @@ class Output:
 
         f.write("\nreceived messages from other providers:, ")
         for addr in self.accounts:
-            f.write(str(int((len(self.groupmsgs.get(addr)) / (len(self.accounts) - 1))) * 100) + "%, ")
+            percentage = int((len(self.groupmsgs.get(addr)) / (len(self.groupmsgs) - 1) * 100))
+            f.write(str(percentage) + "%, ")
 
         f.close()
