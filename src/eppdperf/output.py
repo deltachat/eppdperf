@@ -80,8 +80,58 @@ class Output:
         self.groupmsgs_completed.set()
 
     def write(self):
-        """Write the results to the ouput file.
+        """Write the results to the output file.
         """
+        lines = list()
+
+        lines.append(["test accounts (by provider):"])
+        for addr in self.accounts:
+            lines[0].append(addr.split("@")[1])
+
+        lines.append(["time to login (in seconds):"])
+        for addr in self.accounts:
+            lines[1].append(str(self.logins[addr]))
+
+        lines.append(["sent %s file (in seconds):" % (self.filesize,)])
+        for addr in self.accounts:
+            try:
+                lines[2].append(str(self.sending[addr]))
+            except KeyError:
+                lines[2].append("timeout")
+
+        lines.append(["added to group (in seconds):"])
+        for addr in self.accounts:
+            if addr not in self.groupadd:
+                lines[3].append("timeout")
+                continue
+            lines[3].append(str(self.groupadd[addr]))
+
+        i = 4
+        for addr in self.accounts:
+            lines.append(["received by %s (in seconds):" % (addr.split("@")[1],)])
+            groupresults = self.groupmsgs.get(addr)
+            for ac in self.accounts:
+                if addr == ac:
+                    lines[i].append("self")
+                    continue
+                try:
+                    lines[i].append(str(groupresults[ac]))
+                except KeyError:
+                    lines[i].append("timeout")
+            i += 1
+
+        lines.append(["received messages from other providers:"])
+        for addr in self.accounts:
+            percentage = int((len(self.groupmsgs.get(addr)) / (len(self.groupmsgs) - 1) * 100))
+            lines[i].append(str(percentage) + "%")
+
+        # print output
+        for i in range(len(lines)):
+            lines[i] = ", ".join(lines[i])
+        out = "\n".join(lines)
+        print("Test results in csv format:")
+        print(out)
+
         try:
             f = open(self.outputfile, "x", encoding="utf-8")
         except FileExistsError:
@@ -91,47 +141,5 @@ class Output:
                     return
             os.system("rm " + self.outputfile)
             f = open(self.outputfile, "x", encoding="utf-8")
-        f.write("test accounts (by provider):, ")
-        for addr in self.accounts:
-            f.write(addr.split("@")[1])
-            f.write(", ")
-
-        f.write("\ntime to login (in seconds):, ")
-        for addr in self.accounts:
-            f.write("%s, " % (self.logins[addr],))
-
-        f.write("\nsent %s file (in seconds):, " % (self.filesize,))
-        for addr in self.accounts:
-            try:
-                f.write(str(self.sending[addr]))
-            except KeyError:
-                f.write("timeout")
-            f.write(", ")
-
-        f.write("\nadded to group (in seconds):, ")
-        for addr in self.accounts:
-            if addr not in self.groupadd:
-                f.write("timeout, ")
-                continue
-            f.write(str(self.groupadd[addr]))
-            f.write(", ")
-
-        for addr in self.accounts:
-            f.write("\nreceived by %s (in seconds):, " % (addr.split("@")[1],))
-            groupresults = self.groupmsgs.get(addr)
-            for ac in self.accounts:
-                if addr == ac:
-                    f.write("self, ")
-                    continue
-                try:
-                    f.write(str(groupresults[ac]))
-                except KeyError:
-                    f.write("timeout")
-                f.write(", ")
-
-        f.write("\nreceived messages from other providers:, ")
-        for addr in self.accounts:
-            percentage = int((len(self.groupmsgs.get(addr)) / (len(self.groupmsgs) - 1) * 100))
-            f.write(str(percentage) + "%, ")
-
+        f.write(out)
         f.close()
