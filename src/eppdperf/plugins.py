@@ -1,3 +1,4 @@
+import os.path
 import time
 import datetime
 import deltachat
@@ -88,10 +89,11 @@ class SpiderPlugin:
             return  # can safely ignore group messages. spider only creates it
 
         # send response to file sending test
-        msginfo = message.get_message_info()
-        testduration = parse_msg(msginfo).get("tdelta")
+        received = (message.time_received - datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)).total_seconds()
+        sent = float(os.path.basename(message.filename))
+        testduration = received - sent
         begin = time.time()
-        message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, msginfo))
+        message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, message.get_message_info()))
         # if the response arrives before timeout, this gets overwritten anyway:
         self.output.submit_filetest_result(message.get_sender_contact().addr, testduration)
 

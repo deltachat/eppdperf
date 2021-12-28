@@ -162,9 +162,11 @@ def send_test_file(spac: deltachat.Account, account: deltachat.Account, testfile
     :param testfile: absolute path to test file, the default is 15 MB large
    """
     chat = account.create_chat(spac)
+    # this is a bit early, yes, but with a 15 MB file on my system the delay was only 0.02 seconds.
+    begin = str(time.time())
     # need to copy testfile to blobdir to avoid error
-    shutil.copy(testfile, account.get_blobdir())
-    newfilepath = os.path.join(account.get_blobdir(), os.path.basename(testfile))
+    newfilepath = os.path.join(account.get_blobdir(), begin)
+    shutil.copy(testfile, newfilepath)
     message = chat.prepare_message_file(newfilepath)
     chat.send_prepared(message)
 
