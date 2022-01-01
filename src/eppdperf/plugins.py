@@ -31,8 +31,10 @@ class Plugin:
 
         :param ffi_event: deltachat.events.FFIEvent
         """
-        if "ERROR" in str(ffi_event) or "WARNING" in str(ffi_event):
-            print("[%s] %s" % (self.account.get_config("addr"), str(ffi_event)))
+        logmsg = str(ffi_event)
+        if "ERROR" in logmsg or "WARNING" in logmsg:
+            if "Ignoring nested protected headers" not in logmsg:
+                print("[%s] %s" % (self.account.get_config("addr"), logmsg))
 
 
 class TestPlugin(Plugin):
@@ -94,6 +96,7 @@ class SpiderPlugin(Plugin):
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message: deltachat.Message):
         message.create_chat()
+        minfo = message.get_message_info()
 
         if message.is_system_message():
             return  # we don't care about system messages
@@ -106,9 +109,9 @@ class SpiderPlugin(Plugin):
         sent = float(os.path.basename(message.filename))
         testduration = received - sent
         begin = time.time()
-        message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, message.get_message_info()))
+        message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, minfo))
         # if the response arrives before timeout, this gets overwritten anyway:
-        self.output.submit_filetest_result(message.get_sender_contact().addr, testduration)
+        self.output.submit_filetest_result(message.get_sender_contact().addr, testduration, parse_msg(minfo)["hops"])
 
     @deltachat.account_hookimpl
     def ac_configure_completed(self, success):
@@ -129,7 +132,7 @@ def parse_msg(text: str) -> dict:
     :return: a dictionary with different values parse from the message info.
     """
     lines = text.splitlines()
-    response = {}
+    response = { "hops": list() }
     for line in lines:
         if line.startswith("TestDuration: "):
             response["testduration"] = float(line.partition(" ")[2])
@@ -146,6 +149,8 @@ def parse_msg(text: str) -> dict:
             response["begin"] = float(line.partition(" ")[2])
         if line.startswith("Sender: "):
             response["sender"] = line.partition(" ")[2]
+        if line.startswith("Hop: "):
+            response["hops"].append(line.partition(" ")[2])
     if response.get("received") and response.get("sent"):
         response["tdelta"] = (receiveddt - sentdt).total_seconds()
     return response

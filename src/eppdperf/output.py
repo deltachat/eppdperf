@@ -20,6 +20,7 @@ class Output:
         self.receiving = {}
         self.groupadd = {}
         self.groupmsgs = {}
+        self.hops = {}
         self.num_accounts = num_accounts
         self.logins_completed = Event()
         self.groupadd_completed = Event()
@@ -48,13 +49,15 @@ class Output:
         if len(self.receiving) == len(self.accounts):
             self.filetest_completed.set()
 
-    def submit_filetest_result(self, addr: str, sendduration: float):
+    def submit_filetest_result(self, addr: str, sendduration: float, hops: list):
         """Submit to output how long the file sending test took.
 
         :param addr: the email address which successfully sent the file
         :param sendduration: seconds how long the file sending took
+        :param hops: the parsed message info, containing hop data
         """
         self.sending[addr] = sendduration
+        self.hops[addr] = hops
 
     def submit_groupadd_result(self, addr: str, duration: float):
         """Submit to output how long the group add took. Notifies main thread when all test accounts are in the group.
@@ -100,6 +103,21 @@ class Output:
                     lines[1].append(str(self.sending[addr]))
                 except KeyError:
                     lines[1].append("timeout")
+            row = 0
+            while True:
+                onemorerow = False
+                lines.append(["hop %s:" % (row + 1,)])
+                for addr in self.accounts:
+                    try:
+                        hop = self.hops[addr][row].replace(",", "").replace(";", "")
+                        lines[row + 2].append(hop)
+                        onemorerow = True
+                    except IndexError:
+                        lines[row + 2].append("")
+                if not onemorerow:
+                    break
+                row += 1
+            del lines[row + 2]
 
         if self.command == "group":
             lines.append(["added to group (in seconds):"])
