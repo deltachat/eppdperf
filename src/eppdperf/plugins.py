@@ -4,18 +4,46 @@ import datetime
 import deltachat
 
 
-class TestPlugin:
+class Plugin:
+    """Parent class for all plugins"""
+
+    def __init__(self, account, output, begin, classtype):
+        self.account = account
+        self.output = output
+        self.begin = begin
+        self.classtype = classtype
+
+    @deltachat.account_hookimpl
+    def ac_configure_completed(self, success):
+        if success:
+            self.account.start_io()
+            duration = time.time() - self.begin
+            print("%s: successful login as %s in %.1f seconds." %
+                  (self.account.get_self_contact().addr, self.classtype, duration))
+            self.output.submit_login_result(self.account.get_self_contact().addr, duration)
+        else:
+            print("Login failed for %s with password:\n%s" %
+                  (self.account.get_config("addr"), self.account.get_config("mail_pw")))
+
+    @deltachat.account_hookimpl
+    def ac_process_ffi_event(self, ffi_event):
+        """Log all errors and warnings to SDTOUT
+
+        :param ffi_event: deltachat.events.FFIEvent
+        """
+        if "ERROR" in str(ffi_event) or "WARNING" in str(ffi_event):
+            print("[%s] %s" % (self.account.get_config("addr"), str(ffi_event)))
+
+
+class TestPlugin(Plugin):
     """Plugin for the deltachat test accounts.
 
     :param account: the test account object
     :param output: Output object
     """
 
-    def __init__(self, account: deltachat.Account, output, begin):
-        self.account = account
-        self.output = output
-        self.begin = begin
-        self.name = "test account"
+    def __init__(self, account: deltachat.Account, output, begin, classtype="test account"):
+        super().__init__(account, output, begin, classtype)
 
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message: deltachat.Message):
@@ -52,31 +80,16 @@ class TestPlugin:
               (receiver, filesendduration, sender, duration))
         self.output.submit_receive_result(receiver, duration)
 
-    @deltachat.account_hookimpl
-    def ac_configure_completed(self, success):
-        if success:
-            self.account.start_io()
-            duration = time.time() - self.begin
-            print("%s: successful login as test account in %.1f seconds." %
-                  (self.account.get_self_contact().addr, duration))
-            self.output.submit_login_result(self.account.get_self_contact().addr, duration)
-        else:
-            print("Login failed for %s with password:\n%s" %
-                  (self.account.get_config("addr"), self.account.get_config("mail_pw")))
 
-
-class SpiderPlugin:
+class SpiderPlugin(Plugin):
     """Plugin for the spider deltachat account.
 
     :param account: the test account object
     :param output: Output object
     """
 
-    def __init__(self, account, output, begin):
-        self.account = account
-        self.output = output
-        self.begin = begin
-        self.name = "spider"
+    def __init__(self, account: deltachat.Account, output, begin, classtype="spider"):
+        super().__init__(account, output, begin, classtype)
 
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message: deltachat.Message):
