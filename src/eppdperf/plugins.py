@@ -132,7 +132,7 @@ def parse_msg(text: str) -> dict:
     :return: a dictionary with different values parse from the message info.
     """
     lines = text.splitlines()
-    response = { "hops": list() }
+    response = {"hops": list()}
     for line in lines:
         if line.startswith("TestDuration: "):
             response["testduration"] = float(line.partition(" ")[2])
