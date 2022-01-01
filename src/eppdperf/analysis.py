@@ -128,14 +128,18 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> del
 
     begin = time.time()
 
-    os.mkdir(os.path.join(data_dir, entry["addr"]))
+    try:
+        os.mkdir(os.path.join(data_dir, entry["addr"]))
+    except FileExistsError:
+        pass
     db_path = os.path.join(data_dir, entry["addr"], "db.sqlite")
 
     ac = deltachat.Account(db_path)
     if entry.get("addr") == debug:
         ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
     ac.add_account_plugin(plugin(ac, output, begin))
-    ac.set_config("addr", entry["addr"])
+    if not ac.is_configured():
+        ac.set_config("addr", entry["addr"])
     ac.set_config("mail_pw", entry["app_pw"])
 
     for name in ("send_server", "mail_server"):
@@ -147,7 +151,8 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> del
     ac.set_config("mvbox_watch", "0")
     ac.set_config("sentbox_watch", "0")
     ac.set_config("bot", "1")
-    configtracker = ac.configure()
+    reconfigure = ac.is_configured()
+    configtracker = ac.configure(reconfigure=reconfigure)
     if plugin is SpiderPlugin:
         configtracker.wait_finish()
     ac.output = output

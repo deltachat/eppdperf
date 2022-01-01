@@ -1,5 +1,6 @@
 # credentials for test accounts
 testaccounts.txt
+dc_data/
 
 # virtualenv
 venv/
