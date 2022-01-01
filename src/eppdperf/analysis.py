@@ -148,7 +148,10 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> del
             ac.set_config(name, val)
 
     ac.set_config("mvbox_move", "0")
-    ac.set_config("mvbox_watch", "0")
+    try:
+        ac.set_config("mvbox_watch", "0")
+    except KeyError:
+        pass  # option will be deprecated in deltachat 1.70.1
     ac.set_config("sentbox_watch", "0")
     ac.set_config("bot", "1")
     reconfigure = ac.is_configured()
