@@ -9,6 +9,9 @@ Measurement criteria are:
 - How long does it take to add an account to a group
 - How long does it take to send an email
 - How long does it take to receive an email
+- which long does it take for different mail servers to communicate with each other
+- How much storage do servers provide to users
+- Do servers support CONDSTORE for synchronizing read state between multi-clients
 
 ## Setup
 
@@ -22,13 +25,3 @@ python3 -m venv venv
 pip install -e .
 eppdperf -h
 ```
-
-## License
-
-Das Lied "Einfache Antworten" von [ph4nt](ph4nt24.bandcamp.com) steht unter [CC
-BY-SA 3.0.](https://creativecommons.org/licenses/by-sa/3.0/)
-
-Das Buch "Das Geheimnis des Inquisitors" von [Nami
-Lefherz](https://lefherz.net) steht unter [CC BY
-4.0](https://creativecommons.org/licenses/by/4.0/).
-
