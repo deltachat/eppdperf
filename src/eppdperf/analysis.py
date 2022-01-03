@@ -153,7 +153,11 @@ def servercapabilitiestest(output, accounts: [deltachat.Account], timeout: int):
         if b"CONDSTORE" in results:
             output.submit_condstore_result(ac.get_config("addr"))
         if b"QUOTA" in results:
-            quotaint = imapconn.get_quota()[0].limit
+            try:
+                quotaint = imapconn.get_quota()[0].limit
+            except IndexError:
+                output.submit_quota_result(ac.get_config("addr"), "Server Error")
+                continue
             if quotaint > 1024 * 1024:
                 quota = str(round(quotaint / (1024 * 1024), 3)) + "GB"
             else:
