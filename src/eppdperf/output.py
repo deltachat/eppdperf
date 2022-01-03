@@ -1,6 +1,5 @@
 import os
 from threading import Event
-from .analysis import get_file_size
 
 
 class Output:
@@ -13,7 +12,6 @@ class Output:
         self.command = args.command
         self.outputfile = args.output
         self.overwrite = args.yes
-        self.filesize = get_file_size(args.testfile)
         self.accounts = []
         self.logins = {}
         self.sending = {}
@@ -73,7 +71,6 @@ class Output:
         """Submit to output if mailserver supports CONDSTORE
 
         :param addr: the email address with the CONDSTORE result
-        :param condstore: whether the mail server supports CONDSTORE
         """
         self.condstore[addr] = "Supported"
 
@@ -99,6 +96,13 @@ class Output:
             if len(self.groupmsgs[receiver]) != len(self.accounts) - 1:
                 return
         self.groupmsgs_completed.set()
+
+    def store_file_size(self, filesize: str):
+        """Store file size in Output object
+
+        :param filesize: size of the testfile as human-readable string
+        """
+        self.filesize = filesize
 
     def write(self):
         """Write the results to the output file.
