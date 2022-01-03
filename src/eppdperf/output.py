@@ -54,7 +54,7 @@ class Output:
         """Submit to output how large the quota for a given account is.
 
         :param addr: the email address with the quota result
-        :param quota:
+        :param quota: whether quota is supported, and how much it is.
         """
         self.quotas[addr] = quota
 
@@ -89,11 +89,13 @@ class Output:
         self.groupmsgs_completed.set()
 
     def store_file_size(self, filesize: str):
-        """Store file size in Output object
+        """Store file size in Output object. Insert file size into output file name
 
         :param filesize: size of the testfile as human-readable string
         """
         self.filesize = filesize
+        parts = self.outputfile[::-1].partition(".")
+        self.outputfile = "%s-%s.%s" % (parts[2][::-1], filesize, parts[0][::-1])
 
     def write(self):
         """Write the results to the output file.

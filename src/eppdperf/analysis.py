@@ -213,6 +213,6 @@ def get_file_size(testfile: str) -> str:
     testfile = os.path.join(os.environ.get("PWD"), testfile)
     testfilebytes = os.path.getsize(testfile)
     if testfilebytes > 1024 * 1024:
-        return str(round(testfilebytes / (1024 * 1024), 3)) + "MB"
+        return str(round(testfilebytes / (1024 * 1024))) + "MB"
     else:
-        return str(round(testfilebytes / 1024, 3)) + "KB"
+        return str(round(testfilebytes / 1024)) + "KB"
