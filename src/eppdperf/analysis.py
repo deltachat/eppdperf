@@ -66,19 +66,20 @@ def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], tim
                 print(ac.get_self_contact().addr)
 
 
-def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int):
+def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int, maximum: int):
     """Try to write messages to 5,10,15,25,30,35,40,45,50,55... recipients to find out the limit.
 
     :param spac: spider account to which the messages are addressed
     :param output: Output object which gathers the test results
     :param accounts: test accounts
     :param timeout: timeout in seconds
+    :param maximum: the maximum recipients to try out
     """
     trying_accounts = [ac for ac in accounts]
-    num = 0
+    num = 5
     begin = time.time()
-    while len(trying_accounts) > 0 and num < 100 and time.time() < begin + timeout:
-        num += 5
+    end = False
+    while len(trying_accounts) > 0 and num <= maximum and time.time() < begin + timeout:
         for ac in trying_accounts:
             recipients = []
             for i in range(num):
@@ -126,6 +127,12 @@ def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account
                 num = tries
                 continue
             output.submit_recipients_result(ac.get_config("addr"), str(num))
+        num += 5
+        if end:
+            break
+        if num > maximum:
+            num = maximum
+            end = True
     if time.time() > begin + timeout:
         print("Timeout reached.")
     for ac in trying_accounts:

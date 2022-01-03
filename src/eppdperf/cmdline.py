@@ -100,6 +100,8 @@ def main():
                         help="size of the test file, randomly generated")
     parser.add_argument("-v", "--debug", type=str, default="",
                         help="show deltachat logs for specific account")
+    parser.add_argument("-m", "--max_recipients", type=int, default=100,
+                        help="the max recipients to test during the recipients test")
     args = parser.parse_args()
 
     credentials, spider = parse_accounts_file(args.accounts_file)
@@ -129,7 +131,7 @@ def main():
         servercapabilitiestest(output, accounts, args.timeout)
 
     if args.command == "recipients":
-        recipientstest(spac, output, accounts, args.timeout)
+        recipientstest(spac, output, accounts, args.timeout, args.max_recipients)
 
     shutdown_accounts(args, accounts, spac)
     output.write()
