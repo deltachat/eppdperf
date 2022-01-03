@@ -6,7 +6,7 @@ from typing import Tuple
 from datetime import datetime
 
 from .output import Output
-from .analysis import grouptest, filetest, setup_test_accounts, shutdown_accounts
+from .analysis import grouptest, filetest, servercapabilitiestest, setup_test_accounts, shutdown_accounts
 
 
 def parse_config_line(line: str):
@@ -50,7 +50,7 @@ def parse_accounts_file(accounts_file: str) -> Tuple[list, dict]:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["login", "group", "file", "size", "recipients"],
+    parser.add_argument("command", choices=["login", "group", "file", "size", "recipients", "server"],
                         help="Which test to perform")
     parser.add_argument("-y", "--yes", action="store_true", default=False,
                         help="always answer yes if prompted")
@@ -87,6 +87,9 @@ def main():
 
     if args.command == "file":
         filetest(spac, output, accounts, args.timeout, args.testfile)
+
+    if args.command == "server":
+        servercapabilitiestest(output, accounts, args.timeout)
 
     shutdown_accounts(args, accounts, spac)
     output.write()

@@ -2,6 +2,7 @@ import deltachat
 import time
 import os
 import shutil
+import imapclient
 from .plugins import SpiderPlugin, TestPlugin
 
 
@@ -58,6 +59,30 @@ def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], tim
         for ac in accounts:
             if ac.get_self_contact().addr not in output.sending:
                 print(ac.get_self_contact().addr)
+
+
+def servercapabilitiestest(output, accounts: [deltachat.Account], timeout: int):
+    """Find out the IMAP Quota for all test accounts
+
+    :param output: Output object which gathers the test results
+    :param accounts: test accounts
+    :param timeout: timeout in seconds
+    """
+    for ac in accounts:
+        imapconn = imapclient.IMAPClient(host=ac.get_config("configured_mail_server"))
+        imapconn.login(ac.get_config("addr"), ac.get_config("mail_pw"))
+        results = imapconn.capabilities()
+        if b"CONDSTORE" in results:
+            output.submit_condstore_result(ac.get_config("addr"))
+        if b"QUOTA" in results:
+            quotaint = imapconn.get_quota()[0].limit
+            if quotaint > 1024 * 1024:
+                quota = str(round(quotaint / (1024 * 1024), 3)) + "GB"
+            else:
+                quota = str(round(quotaint / 1024, 3)) + "MB"
+            output.submit_quota_result(ac.get_config("addr"), quota)
+        else:
+            output.submit_quota_result(ac.get_config("addr"), "Not Supported")
 
 
 def shutdown_accounts(args, accounts: [deltachat.Account], spac: deltachat.Account):

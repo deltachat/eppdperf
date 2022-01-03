@@ -21,6 +21,8 @@ class Output:
         self.groupadd = {}
         self.groupmsgs = {}
         self.hops = {}
+        self.quotas = {}
+        self.condstore = {}
         self.num_accounts = num_accounts
         self.logins_completed = Event()
         self.groupadd_completed = Event()
@@ -59,6 +61,22 @@ class Output:
         self.sending[addr] = sendduration
         self.hops[addr] = hops
 
+    def submit_quota_result(self, addr: str, quota: str):
+        """Submit to output how large the quota for a given account is.
+
+        :param addr: the email address with the quota result
+        :param quota:
+        """
+        self.quotas[addr] = quota
+
+    def submit_condstore_result(self, addr: str):
+        """Submit to output if mailserver supports CONDSTORE
+
+        :param addr: the email address with the CONDSTORE result
+        :param condstore: whether the mail server supports CONDSTORE
+        """
+        self.condstore[addr] = "Supported"
+
     def submit_groupadd_result(self, addr: str, duration: float):
         """Submit to output how long the group add took. Notifies main thread when all test accounts are in the group.
 
@@ -95,6 +113,16 @@ class Output:
             lines.append(["time to login (in seconds):"])
             for addr in self.accounts:
                 lines[1].append(str(self.logins[addr]))
+
+        if self.command == "server":
+            lines.append(["IMAP QUOTA:"])
+            lines.append(["CONDSTORE:"])
+            for addr in self.accounts:
+                lines[1].append(self.quotas[addr])
+                try:
+                    lines[2].append(self.condstore[addr])
+                except KeyError:
+                    lines[2].append("Not Supported")
 
         if self.command == "file":
             lines.append(["sent %s file (in seconds):" % (self.filesize,)])
