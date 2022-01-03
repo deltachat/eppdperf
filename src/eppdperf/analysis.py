@@ -1,5 +1,3 @@
-import sys
-
 import deltachat
 import time
 import os
@@ -139,12 +137,11 @@ def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account
         output.submit_recipients_result(ac.get_config("addr"), "No Limit")
 
 
-def servercapabilitiestest(output, accounts: [deltachat.Account], timeout: int):
+def servercapabilitiestest(output, accounts: [deltachat.Account]):
     """Find out the IMAP Quota for all test accounts
 
     :param output: Output object which gathers the test results
     :param accounts: test accounts
-    :param timeout: timeout in seconds
     """
     for ac in accounts:
         imapconn = imapclient.IMAPClient(host=ac.get_config("configured_mail_server"))
@@ -191,7 +188,7 @@ def shutdown_accounts(args, accounts: [deltachat.Account], spac: deltachat.Accou
     spac.wait_shutdown()
 
 
-def setup_test_accounts(spider: dict, credentials: [dict], args, output) -> (deltachat.Account, [deltachat.Account]):
+def logintest(spider: dict, credentials: [dict], args, output) -> (deltachat.Account, [deltachat.Account]):
     """Setup spider and test accounts.
 
     :param spider: an entry dict

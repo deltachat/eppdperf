@@ -7,7 +7,7 @@ from datetime import datetime
 from random import getrandbits
 
 from .output import Output
-from .analysis import grouptest, filetest, recipientstest, servercapabilitiestest, setup_test_accounts, \
+from .analysis import grouptest, filetest, recipientstest, servercapabilitiestest, logintest, \
     shutdown_accounts, get_file_size
 
 
@@ -84,7 +84,7 @@ def generate_file_from_int(filesizeint: int) -> tempfile.NamedTemporaryFile:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["login", "group", "file", "size", "recipients", "server"],
+    parser.add_argument("command", choices=["login", "group", "file", "recipients", "server"],
                         help="Which test to perform")
     parser.add_argument("-y", "--yes", action="store_true", default=False,
                         help="always answer yes if prompted")
@@ -117,7 +117,7 @@ def main():
         args.data_dir = tempdir.name
     print("Storing account data in %s" % (args.data_dir,))
 
-    spac, accounts = setup_test_accounts(spider, credentials, args, output)
+    spac, accounts = logintest(spider, credentials, args, output)
 
     if args.command == "group":
         grouptest(spac, output, accounts, args.timeout)
@@ -128,7 +128,7 @@ def main():
         filetest(spac, output, accounts, args.timeout, testfile.name)
 
     if args.command == "server":
-        servercapabilitiestest(output, accounts, args.timeout)
+        servercapabilitiestest(output, accounts)
 
     if args.command == "recipients":
         recipientstest(spac, output, accounts, args.timeout, args.max_recipients)
