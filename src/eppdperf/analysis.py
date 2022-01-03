@@ -1,8 +1,13 @@
+import sys
+
 import deltachat
 import time
 import os
 import shutil
 import imapclient
+import smtplib
+import ssl
+from email.mime.text import MIMEText
 from .plugins import SpiderPlugin, TestPlugin
 
 
@@ -59,6 +64,72 @@ def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], tim
         for ac in accounts:
             if ac.get_self_contact().addr not in output.sending:
                 print(ac.get_self_contact().addr)
+
+
+def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int):
+    """Try to write messages to 5,10,15,25,30,35,40,45,50,55... recipients to find out the limit.
+
+    :param spac: spider account to which the messages are addressed
+    :param output: Output object which gathers the test results
+    :param accounts: test accounts
+    :param timeout: timeout in seconds
+    """
+    trying_accounts = [ac for ac in accounts]
+    num = 0
+    begin = time.time()
+    while len(trying_accounts) > 0 and num < 100 and time.time() < begin + timeout:
+        num += 5
+        for ac in trying_accounts:
+            recipients = []
+            for i in range(num):
+                splitaddr = spac.get_config("addr").partition("@")
+                # recipients.append(ac.create_contact("%s+%s@%s" % (splitaddr[0], i, splitaddr[2])))
+                recipients.append("%s+%s@%s" % (splitaddr[0], i, splitaddr[2]))
+            # chat = ac.create_group_chat(name=str(num), contacts=recipients)
+            # chat.send_text("Trying out to send a message to %s contacts." % (num,))
+            if ac.get_config("configured_send_security") == "1":
+                smtpconn = smtplib.SMTP_SSL(host=ac.get_config("configured_mail_server"),
+                                            port=ac.get_config("configured_send_port"))
+            elif ac.get_config("configured_send_security") == "2":
+                smtpconn = smtplib.SMTP(host=ac.get_config("configured_mail_server"),
+                                        port=ac.get_config("configured_send_port"))
+                context = ssl.create_default_context()
+                smtpconn.starttls(context=context)
+                smtpconn.ehlo()
+            else:
+                smtpconn = smtplib.SMTP(host=ac.get_config("configured_mail_server"),
+                                        port=ac.get_config("configured_send_port"))
+            smtpconn.login(ac.get_config("addr"), ac.get_config("mail_pw"))
+            msg = MIMEText("Trying out to send a message to %s contacts." % (num,))
+            msg["Subject"] = "Test Message %s" % (num/5,)
+            msg["To"] = ", ".join(recipients)
+            msg["From"] = ac.get_config("addr")
+            print("%s sending out message to %s contacts." % (ac.get_config("addr"), num))
+            try:
+                smtpconn.send_message(msg)
+            except smtplib.SMTPDataError as e:
+                print("[%s] Sending message to %s recipients failed: %s" % (ac.get_config("addr"), num, str(e)))
+                trying_accounts.remove(ac)
+                tries = num
+                num -= 4
+                while num < tries:
+                    del recipients[num]
+                    msg["To"] = ", ".join(recipients)
+                    print("%s sending out message to %s contacts." % (ac.get_config("addr"), num))
+                    try:
+                        smtpconn.send_message(msg)
+                    except smtplib.SMTPDataError as e:
+                        print("[%s] Sending message to %s recipients failed: %s" % (ac.get_config("addr"), num, str(e)))
+                        break
+                    output.submit_recipients_result(ac.get_config("addr"), str(num))
+                    num += 1
+                num = tries
+                continue
+            output.submit_recipients_result(ac.get_config("addr"), str(num))
+    if time.time() > begin + timeout:
+        print("Timeout reached.")
+    for ac in trying_accounts:
+        output.submit_recipients_result(ac.get_config("addr"), "No Limit")
 
 
 def servercapabilitiestest(output, accounts: [deltachat.Account], timeout: int):

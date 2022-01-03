@@ -34,7 +34,8 @@ class Plugin:
         logmsg = str(ffi_event)
         if "ERROR" in logmsg or "WARNING" in logmsg:
             if "Ignoring nested protected headers" not in logmsg:
-                print("[%s] %s" % (self.account.get_config("addr"), logmsg))
+                if "rfc724" not in logmsg:
+                    print("[%s] %s" % (self.account.get_config("addr"), logmsg))
 
 
 class TestPlugin(Plugin):

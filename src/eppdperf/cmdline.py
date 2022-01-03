@@ -7,7 +7,8 @@ from datetime import datetime
 from random import getrandbits
 
 from .output import Output
-from .analysis import grouptest, filetest, servercapabilitiestest, setup_test_accounts, shutdown_accounts, get_file_size
+from .analysis import grouptest, filetest, recipientstest, servercapabilitiestest, setup_test_accounts, \
+    shutdown_accounts, get_file_size
 
 
 def parse_config_line(line: str):
@@ -126,6 +127,9 @@ def main():
 
     if args.command == "server":
         servercapabilitiestest(output, accounts, args.timeout)
+
+    if args.command == "recipients":
+        recipientstest(spac, output, accounts, args.timeout)
 
     shutdown_accounts(args, accounts, spac)
     output.write()

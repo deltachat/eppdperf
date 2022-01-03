@@ -18,6 +18,7 @@ class Output:
         self.groupadd = {}
         self.groupmsgs = {}
         self.hops = {}
+        self.recipients = {}
         self.quotas = {}
         self.condstore = {}
         self.num_accounts = num_accounts
@@ -49,6 +50,14 @@ class Output:
         self.hops[addr] = hops
         if len(self.sending) == len(self.accounts):
             self.filetest_completed.set()
+
+    def submit_recipients_result(self, addr: str, num: str):
+        """Submit to output how many recipients this addr succeeded to write to.
+
+        :param addr: the test account which sent out the mails
+        :param num: the number of recipients it tried to send to
+        """
+        self.recipients[addr] = num
 
     def submit_quota_result(self, addr: str, quota: str):
         """Submit to output how large the quota for a given account is.
@@ -120,6 +129,11 @@ class Output:
                     lines[2].append(self.condstore[addr])
                 except KeyError:
                     lines[2].append("Not Supported")
+
+        if self.command == "recipients":
+            lines.append(["maximum recipients:"])
+            for addr in self.accounts:
+                lines[1].append(self.recipients[addr])
 
         if self.command == "file":
             lines.append(["sent %s file (in seconds):" % (self.filesize,)])
