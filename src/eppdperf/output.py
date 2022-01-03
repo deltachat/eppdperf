@@ -15,7 +15,6 @@ class Output:
         self.accounts = []
         self.logins = {}
         self.sending = {}
-        self.receiving = {}
         self.groupadd = {}
         self.groupmsgs = {}
         self.hops = {}
@@ -39,18 +38,8 @@ class Output:
         if len(self.accounts) == self.num_accounts:
             self.logins_completed.set()
 
-    def submit_receive_result(self, addr: str, recvduration: float):
-        """Submit to output how long the receiving test took. Notifies main thread when all tests are complete.
-
-        :param addr: the email address which successfully sent the file
-        :param recvduration: seconds how long the response took. can also be "timeout"
-        """
-        self.receiving[addr] = recvduration
-        if len(self.receiving) == len(self.accounts):
-            self.filetest_completed.set()
-
     def submit_filetest_result(self, addr: str, sendduration: float, hops: list):
-        """Submit to output how long the file sending test took.
+        """Submit to output how long the file sending test took. Notifies main thread when all tests are complete.
 
         :param addr: the email address which successfully sent the file
         :param sendduration: seconds how long the file sending took
@@ -58,6 +47,8 @@ class Output:
         """
         self.sending[addr] = sendduration
         self.hops[addr] = hops
+        if len(self.sending) == len(self.accounts):
+            self.filetest_completed.set()
 
     def submit_quota_result(self, addr: str, quota: str):
         """Submit to output how large the quota for a given account is.

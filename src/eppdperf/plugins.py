@@ -46,6 +46,7 @@ class TestPlugin(Plugin):
 
     def __init__(self, account: deltachat.Account, output, begin, classtype="test account"):
         super().__init__(account, output, begin, classtype)
+        self.addr = account.get_self_contact().addr
 
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message: deltachat.Message):
@@ -56,31 +57,21 @@ class TestPlugin(Plugin):
             # if it's a device message or mailing list, we don't need to look at it.
             return
 
-        sender = message.get_sender_contact().addr
-        receiver = message.account.get_self_contact().addr
-
         # message parsing
         msgcontent = parse_msg(message.text)
-        filesendduration = msgcontent.get("testduration")
         duration = received - msgcontent.get("begin")
         author = msgcontent.get("sender")
 
         # group add test
         if message.chat.is_group():
             if author == "spider":
-                print("%s: joined group chat %s after %.1f seconds" % (receiver, message.chat.get_name(), duration))
-                message.chat.send_text("Sender: %s\nBegin: %s" % (receiver, str(time.time())))
+                print("%s: joined group chat %s after %.1f seconds" % (self.addr, message.chat.get_name(), duration))
+                message.chat.send_text("Sender: %s\nBegin: %s" % (self.addr, str(time.time())))
                 self.output.submit_groupadd_result(self.account.get_self_contact().addr, duration)
             else:
                 print("%s received message from %s after %.1f seconds" %
-                      (receiver, author, duration))
-                self.output.submit_groupmsg_result(receiver, author, duration)
-            return
-
-        # file sending response
-        print("%s: test message took %.1f seconds to %s and %.1f seconds back." %
-              (receiver, filesendduration, sender, duration))
-        self.output.submit_receive_result(receiver, duration)
+                      (self.addr, author, duration))
+                self.output.submit_groupmsg_result(self.addr, author, duration)
 
 
 class SpiderPlugin(Plugin):
@@ -96,22 +87,16 @@ class SpiderPlugin(Plugin):
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message: deltachat.Message):
         message.create_chat()
-        minfo = message.get_message_info()
+        if message.filename == "":
+            return  # only handle filetest
 
-        if message.is_system_message():
-            return  # we don't care about system messages
-
-        if message.chat.is_group():
-            return  # can safely ignore group messages. spider only creates it
-
-        # send response to file sending test
         received = (message.time_received - datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)).total_seconds()
+        # get time_sent from attachment filename - hacky, I know
         sent = float(os.path.basename(message.filename))
         testduration = received - sent
-        begin = time.time()
-        message.chat.send_text("TestDuration: %f\nBegin: %f\n%s" % (testduration, begin, minfo))
-        # if the response arrives before timeout, this gets overwritten anyway:
-        self.output.submit_filetest_result(message.get_sender_contact().addr, testduration, parse_msg(minfo)["hops"])
+        hops = parse_msg(message.get_message_info())["hops"]
+        self.output.submit_filetest_result(message.get_sender_contact().addr, testduration, hops)
+        print("%s: test message took %.1f seconds to spider." % (message.get_sender_contact().addr, testduration))
 
     @deltachat.account_hookimpl
     def ac_configure_completed(self, success):
