@@ -258,6 +258,7 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> del
         pass  # option will be deprecated in deltachat 1.70.1
     ac.set_config("sentbox_watch", "0")
     ac.set_config("bot", "1")
+    ac.set_config("mdns_enabled", "0")
     reconfigure = ac.is_configured()
     configtracker = ac.configure(reconfigure=reconfigure)
     if plugin is SpiderPlugin:
