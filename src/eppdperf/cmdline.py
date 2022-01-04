@@ -106,7 +106,7 @@ def main():
 
     credentials, spider = parse_accounts_file(args.accounts_file)
     if args.output is None:
-        args.output = "%s-%s.csv" % (args.command, datetime.now().strftime("%Y-%m-%d"))
+        args.output = "results/%s-%s.csv" % (args.command, datetime.now().strftime("%Y-%m-%d"))
     output = Output(args, len(credentials))
     if args.command != "server":
         assert spider is not None, "most tests need a spider echobot account to run"
