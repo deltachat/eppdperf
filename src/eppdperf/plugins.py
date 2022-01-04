@@ -47,6 +47,7 @@ class TestPlugin(Plugin):
 
     def __init__(self, account: deltachat.Account, output, begin, classtype="test account"):
         super().__init__(account, output, begin, classtype)
+        self.group = ""
 
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message: deltachat.Message):
@@ -57,22 +58,23 @@ class TestPlugin(Plugin):
             # if it's a device message or mailing list, we don't need to look at it.
             return
 
-        # message parsing
-        selfaddr = message.account.get_config("addr")
-        msgcontent = parse_msg(message.text)
-        duration = received - msgcontent.get("begin")
-        author = msgcontent.get("sender")
-
         # group add test
         if message.chat.is_group():
+            # message parsing
+            selfaddr = message.account.get_config("addr")
+            msgcontent = parse_msg(message.text)
+            duration = received - msgcontent.get("begin")
+            author = msgcontent.get("sender")
             if author == "spider":
                 print("%s: joined group chat %s after %.1f seconds" % (selfaddr, message.chat.get_name(), duration))
                 message.chat.send_text("Sender: %s\nBegin: %s" % (selfaddr, str(time.time())))
                 self.output.submit_groupadd_result(self.account.get_self_contact().addr, duration)
+                self.group = message.chat.get_name()
             else:
-                print("%s received message from %s after %.1f seconds" %
-                      (selfaddr, author, duration))
-                self.output.submit_groupmsg_result(selfaddr, author, duration)
+                if message.chat.get_name() == self.group:
+                    print("%s received message from %s after %.1f seconds" %
+                          (selfaddr, author, duration))
+                    self.output.submit_groupmsg_result(selfaddr, author, duration)
 
 
 class SpiderPlugin(Plugin):
