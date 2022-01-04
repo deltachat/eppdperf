@@ -151,7 +151,7 @@ class Output:
                         hop = self.hops[addr][row].replace(",", "").replace(";", "")
                         lines[row + 2].append(hop)
                         onemorerow = True
-                    except IndexError:
+                    except (KeyError, IndexError):
                         lines[row + 2].append("")
                 if not onemorerow:
                     break

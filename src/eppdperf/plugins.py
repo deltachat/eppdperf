@@ -33,9 +33,17 @@ class Plugin:
         """
         logmsg = str(ffi_event)
         if "ERROR" in logmsg or "WARNING" in logmsg:
-            if "Ignoring nested protected headers" not in logmsg:
-                if "rfc724" not in logmsg:
-                    print("[%s] %s" % (self.account.get_config("addr"), logmsg))
+            if "Ignoring nested protected headers" in logmsg:
+                return
+            if "rfc724" in logmsg:
+                return
+            if "inner stream closed" in logmsg:
+                return
+            if "failed to close folder: NoSession" in logmsg:
+                return
+            if "failed to fetch all uids: got 0" in logmsg:
+                return
+            print("[%s] %s" % (self.account.get_config("addr"), logmsg))
 
 
 class TestPlugin(Plugin):
