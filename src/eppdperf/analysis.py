@@ -250,7 +250,7 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> del
         ac.set_config("addr", entry["addr"])
     ac.set_config("mail_pw", entry["app_pw"])
 
-    for name in ("send_server", "mail_server"):
+    for name in ("send_server", "mail_server", "mail_port", "mail_security", "send_port", "send_security"):
         val = entry.get(name)
         if val is not None:
             ac.set_config(name, val)
