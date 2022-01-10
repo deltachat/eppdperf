@@ -102,8 +102,8 @@ def main():
                         help="show deltachat logs for specific account")
     parser.add_argument("-s", "--select", type=str, default="",
                         help="run the test only with one selected account")
-    parser.add_argument("-m", "--max_recipients", type=int, default=100,
-                        help="the max recipients to test during the recipients test")
+    parser.add_argument("-m", "--max_recipients", type=str, default="100,100,5",
+                        help="send to specified number of recipients. if comma-sepaerated, it specifies a start number and the second value is a step wise increase")
     args = parser.parse_args()
 
     credentials, spider = parse_accounts_file(args.accounts_file)
@@ -138,7 +138,14 @@ def main():
         servercapabilitiestest(output, accounts)
 
     if args.command == "recipients":
-        recipientstest(spac, output, accounts, args.timeout, args.max_recipients)
+        rec = [int(x) for x in args.max_recipients.strip().split(",")]
+        if len(rec) == 1:
+            recnums = [rec[0]]
+        elif len(rec) == 2:
+            recnums = list(range(rec[0], 100, rec[1]))
+        else:
+            raise ValueError("option does not use more than two args")
+        recipientstest(spac, output, accounts, args.timeout, recnums)
 
     shutdown_accounts(args, accounts, spac)
     output.write()

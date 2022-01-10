@@ -65,7 +65,7 @@ def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], tim
                 print(ac.get_self_contact().addr)
 
 
-def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int, maximum: int):
+def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int, recipient_nums: [int]):
     """Try to write messages to 5,10,15,25,30,35,40,45,50,55... recipients to find out the limit.
 
     :param spac: spider account to which the messages are addressed
@@ -74,31 +74,20 @@ def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account
     :param timeout: timeout in seconds
     :param maximum: the maximum recipients to try out
     """
-    trying_accounts = accounts.copy()
-    num = 10
     os.system("date")
-    begin = time.time()
-    end = False
-    while len(trying_accounts) > 0 and num <= maximum and time.time() < begin + timeout:
-        for ac in trying_accounts:
-            smtpconn = get_smtpconn(ac)
+    print("Recipient Test with %d accounts, steps: %s" % (
+          len(accounts), recipient_nums))
+    for ac in accounts:
+        smtpconn = get_smtpconn(ac)
+        for num in recipient_nums:
             try:
                 send_smtp_msg(smtpconn, spac, ac, num)
             except smtplib.SMTPDataError as e:
                 print("[%s] Sending message to %s recipients failed: %s" % (ac.get_config("addr"), num, str(e)))
-                trying_accounts.remove(ac)
-                continue
-            output.submit_recipients_result(ac.get_config("addr"), str(num))
-        num += 5
-        if end:
-            break
-        if num > maximum:
-            num = maximum
-            end = True
-    if time.time() > begin + timeout:
-        print("Timeout reached.")
-    for ac in trying_accounts:
-        output.submit_recipients_result(ac.get_config("addr"), "No Limit")
+                break
+            else:
+                print("[%s] Sending message to %s recipients success" % (ac.get_config("addr"), num))
+                output.submit_recipients_result(ac.get_config("addr"), str(num))
 
 
 def get_smtpconn(ac: deltachat.Account) -> smtplib.SMTP_SSL:
