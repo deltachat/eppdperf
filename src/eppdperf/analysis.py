@@ -215,6 +215,7 @@ def logintest(spider: dict, credentials: [dict], args, output) -> (deltachat.Acc
             print(account.get_config("addr"))
         else:
             accounts.append(account)
+    print("Successfully logged in to %s accounts." % (len(accounts),))
     return spac, accounts
 
 
