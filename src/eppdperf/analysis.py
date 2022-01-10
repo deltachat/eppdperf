@@ -96,18 +96,21 @@ def get_smtpconn(ac: deltachat.Account) -> smtplib.SMTP_SSL:
     :param ac: the test account
     :return: the SMTP connection
     """
+    print("Trying to login to %s" % (ac.get_config("addr"),))
+    host = ac.get_config("configured_send_server")
+    port = int(ac.get_config("configured_send_port"))
     if ac.get_config("configured_send_security") == "1":
-        smtpconn = smtplib.SMTP_SSL(host=ac.get_config("configured_mail_server"),
-                                    port=int(ac.get_config("configured_send_port")))
+        smtpconn = smtplib.SMTP_SSL(host, port)
     elif ac.get_config("configured_send_security") == "2":
-        smtpconn = smtplib.SMTP(host=ac.get_config("configured_mail_server"),
-                                port=int(ac.get_config("configured_send_port")))
+        smtpconn = smtplib.SMTP(host, port)
         context = ssl.create_default_context()
         smtpconn.starttls(context=context)
         smtpconn.ehlo()
     else:
-        smtpconn = smtplib.SMTP(host=ac.get_config("configured_mail_server"),
-                                port=int(ac.get_config("configured_send_port")))
+        raise ValueError("Failed to connect: can not determine configured_send_security %s for %s" %
+                         (ac.get_config("configured_send_security"), ac.get_config("addr")))
+        # smtpconn = smtplib.SMTP(host=ac.get_config("configured_mail_server"),
+        #                         port=int(ac.get_config("configured_send_port")))
     smtpconn.login(ac.get_config("addr"), ac.get_config("mail_pw"))
     return smtpconn
 
