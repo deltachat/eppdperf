@@ -107,6 +107,11 @@ def main():
     args = parser.parse_args()
 
     credentials, spider = parse_accounts_file(args.accounts_file)
+    for entry in credentials:
+        if entry["addr"] == args.select:
+            credentials = [entry]
+            break
+
     if args.output is None:
         args.output = "results/%s-%s.csv" % (args.command, datetime.now().strftime("%Y-%m-%d"))
     output = Output(args, len(credentials))
@@ -118,11 +123,6 @@ def main():
         tempdir = tempfile.TemporaryDirectory(prefix="perfanal")
         args.data_dir = tempdir.name
     print("Storing account data in %s" % (args.data_dir,))
-
-    for entry in credentials:
-        if entry["addr"] == args.select:
-            credentials = [entry]
-            break
 
     spac, accounts = logintest(spider, credentials, args, output)
 
