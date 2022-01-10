@@ -133,7 +133,10 @@ class Output:
         if self.command == "recipients":
             lines.append(["maximum recipients:"])
             for addr in self.accounts:
-                lines[1].append(self.recipients[addr])
+                try:
+                    lines[1].append(self.recipients[addr])
+                except KeyError:
+                    lines[1].append("")
 
         if self.command == "file":
             lines.append(["sent %s file (in seconds):" % (self.filesize,)])
