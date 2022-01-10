@@ -100,6 +100,8 @@ def main():
                         help="size of the test file, randomly generated")
     parser.add_argument("-v", "--debug", type=str, default="",
                         help="show deltachat logs for specific account")
+    parser.add_argument("-s", "--select", type=str, default="",
+                        help="run the test only with one selected account")
     parser.add_argument("-m", "--max_recipients", type=int, default=100,
                         help="the max recipients to test during the recipients test")
     args = parser.parse_args()
@@ -116,6 +118,11 @@ def main():
         tempdir = tempfile.TemporaryDirectory(prefix="perfanal")
         args.data_dir = tempdir.name
     print("Storing account data in %s" % (args.data_dir,))
+
+    for entry in credentials:
+        if entry["addr"] == args.select:
+            credentials = [entry]
+            break
 
     spac, accounts = logintest(spider, credentials, args, output)
 
