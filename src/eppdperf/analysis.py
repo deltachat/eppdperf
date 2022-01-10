@@ -74,39 +74,16 @@ def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account
     :param timeout: timeout in seconds
     :param maximum: the maximum recipients to try out
     """
-    trying_accounts = [ac for ac in accounts]
+    trying_accounts = accounts.copy()
     num = 10
+    os.system("date")
     begin = time.time()
     end = False
     while len(trying_accounts) > 0 and num <= maximum and time.time() < begin + timeout:
         for ac in trying_accounts:
-            recipients = []
-            for i in range(num):
-                splitaddr = spac.get_config("addr").partition("@")
-                # recipients.append(ac.create_contact("%s+%s@%s" % (splitaddr[0], i, splitaddr[2])))
-                recipients.append("%s+%s@%s" % (splitaddr[0], i, splitaddr[2]))
-            # chat = ac.create_group_chat(name=str(num), contacts=recipients)
-            # chat.send_text("Trying out to send a message to %s contacts." % (num,))
-            if ac.get_config("configured_send_security") == "1":
-                smtpconn = smtplib.SMTP_SSL(host=ac.get_config("configured_mail_server"),
-                                            port=ac.get_config("configured_send_port"))
-            elif ac.get_config("configured_send_security") == "2":
-                smtpconn = smtplib.SMTP(host=ac.get_config("configured_mail_server"),
-                                        port=ac.get_config("configured_send_port"))
-                context = ssl.create_default_context()
-                smtpconn.starttls(context=context)
-                smtpconn.ehlo()
-            else:
-                smtpconn = smtplib.SMTP(host=ac.get_config("configured_mail_server"),
-                                        port=ac.get_config("configured_send_port"))
-            smtpconn.login(ac.get_config("addr"), ac.get_config("mail_pw"))
-            msg = MIMEText("Trying out to send a message to %s contacts." % (num,))
-            msg["Subject"] = "Test Message %s" % (num/5,)
-            msg["To"] = ", ".join(recipients)
-            msg["From"] = ac.get_config("addr")
-            print("%s sending out message to %s contacts." % (ac.get_config("addr"), num))
+            smtpconn = get_smtpconn(ac)
             try:
-                smtpconn.send_message(msg)
+                send_smtp_msg(smtpconn, spac, ac, num)
             except smtplib.SMTPDataError as e:
                 print("[%s] Sending message to %s recipients failed: %s" % (ac.get_config("addr"), num, str(e)))
                 trying_accounts.remove(ac)
@@ -122,6 +99,45 @@ def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account
         print("Timeout reached.")
     for ac in trying_accounts:
         output.submit_recipients_result(ac.get_config("addr"), "No Limit")
+
+
+def get_smtpconn(ac: deltachat.Account) -> smtplib.SMTP_SSL:
+    """Get a SMTP connection
+
+    :param ac: the test account
+    :return: the SMTP connection
+    """
+    if ac.get_config("configured_send_security") == "1":
+        smtpconn = smtplib.SMTP_SSL(host=ac.get_config("configured_mail_server"),
+                                    port=int(ac.get_config("configured_send_port")))
+    elif ac.get_config("configured_send_security") == "2":
+        smtpconn = smtplib.SMTP(host=ac.get_config("configured_mail_server"),
+                                port=int(ac.get_config("configured_send_port")))
+        context = ssl.create_default_context()
+        smtpconn.starttls(context=context)
+        smtpconn.ehlo()
+    else:
+        smtpconn = smtplib.SMTP(host=ac.get_config("configured_mail_server"),
+                                port=int(ac.get_config("configured_send_port")))
+    smtpconn.login(ac.get_config("addr"), ac.get_config("mail_pw"))
+    return smtpconn
+
+
+def send_smtp_msg(smtpconn: smtplib.SMTP_SSL, spac: deltachat.Account, ac: deltachat.Account, num: int):
+    """Send a test message over an SMTP connection
+
+    :param smtpconn: the SMTP connection which sends the message
+    """
+    recipients = []
+    for i in range(num):
+        splitaddr = spac.get_config("addr").partition("@")
+        # recipients.append(ac.create_contact("%s+%s@%s" % (splitaddr[0], i, splitaddr[2])))
+        recipients.append("%s+%s@%s" % (splitaddr[0], i, splitaddr[2]))
+    msg = MIMEText("Trying out to send a message to %s contacts." % (num,))
+    msg["Subject"] = "Test Message %s" % (num / 5,)
+    msg["To"] = ", ".join(recipients)
+    msg["From"] = ac.get_config("addr")
+    smtpconn.send_message(msg)
 
 
 def servercapabilitiestest(output, accounts: [deltachat.Account]):
