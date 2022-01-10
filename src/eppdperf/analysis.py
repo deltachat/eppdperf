@@ -110,20 +110,6 @@ def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account
             except smtplib.SMTPDataError as e:
                 print("[%s] Sending message to %s recipients failed: %s" % (ac.get_config("addr"), num, str(e)))
                 trying_accounts.remove(ac)
-                tries = num
-                num -= 4
-                while num < tries:
-                    del recipients[num]
-                    msg["To"] = ", ".join(recipients)
-                    print("%s sending out message to %s contacts." % (ac.get_config("addr"), num))
-                    try:
-                        smtpconn.send_message(msg)
-                    except smtplib.SMTPDataError as e:
-                        print("[%s] Sending message to %s recipients failed: %s" % (ac.get_config("addr"), num, str(e)))
-                        break
-                    output.submit_recipients_result(ac.get_config("addr"), str(num))
-                    num += 1
-                num = tries
                 continue
             output.submit_recipients_result(ac.get_config("addr"), str(num))
         num += 5
