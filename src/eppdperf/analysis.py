@@ -1,4 +1,5 @@
 import deltachat
+from deltachat.capi import lib
 import time
 import os
 import shutil
@@ -74,7 +75,7 @@ def recipientstest(spac: deltachat.Account, output, accounts: [deltachat.Account
     :param maximum: the maximum recipients to try out
     """
     trying_accounts = [ac for ac in accounts]
-    num = 5
+    num = 10
     begin = time.time()
     end = False
     while len(trying_accounts) > 0 and num <= maximum and time.time() < begin + timeout:
@@ -181,7 +182,9 @@ def shutdown_accounts(args, accounts: [deltachat.Account], spac: deltachat.Accou
     else:
         print("deleting all messages in the %s account..." % (spac.get_config("addr"),))
         for chat in spac.get_chats():
-            spac.delete_messages(chat.get_messages())
+            messages = chat.get_messages()
+            if messages:
+                spac.delete_messages(messages)
     spac.shutdown()
     for ac in accounts:
         ac.wait_shutdown()
@@ -211,7 +214,7 @@ def logintest(spider: dict, credentials: [dict], args, output) -> (deltachat.Acc
     if time.time() > begin + args.timeout:
         print("Timeout reached. Not configured:")
     for account in tried_accounts:
-        if not account.is_configured():
+        if lib.dc_get_connectivity(account._dc_context) < 3000:
             print(account.get_config("addr"))
         else:
             accounts.append(account)
