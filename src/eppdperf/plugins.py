@@ -2,6 +2,7 @@ import os.path
 import time
 import datetime
 import deltachat
+from deltachat.capi import lib
 
 
 class Plugin:
@@ -14,9 +15,12 @@ class Plugin:
         self.classtype = classtype
 
     @deltachat.account_hookimpl
+    # better wait for connectivity_changed FFI event
     def ac_configure_completed(self, success):
         if success:
             self.account.start_io()
+            while lib.dc_get_connectivity(self.account._dc_context) < 3000:
+                time.sleep(0.1)
             duration = time.time() - self.begin
             print("%s: successful login as %s in %.1f seconds." %
                   (self.account.get_self_contact().addr, self.classtype, duration))
