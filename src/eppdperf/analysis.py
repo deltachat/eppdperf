@@ -57,7 +57,18 @@ def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], tim
     for ac in accounts:
         send_test_file(spac, ac, testfile)
     # wait until finished, or timeout
-    output.filetest_completed.wait(timeout=timeout)
+    try:
+        output.filetest_completed.wait(timeout=timeout)
+    except KeyboardInterrupt:
+        print("Test aborted. File test sending failed for: ")
+        for ac in accounts:
+            addr = ac.get_config("addr")
+            try:
+                float(output.sending.get(addr))
+            except ValueError:
+                print("%s: %s" % (addr, output.sending.get(addr)))
+            except TypeError:
+                print("%s: timeout" % (addr,))
     if time.time() >= begin + timeout:
         print("Timeout reached. File sending test failed for")
         for ac in accounts:
