@@ -7,7 +7,7 @@ import imapclient
 import smtplib
 import ssl
 from email.mime.text import MIMEText
-from .plugins import SpiderPlugin, TestPlugin
+from .plugins import SpiderPlugin, TestPlugin, parse_msg
 
 
 def grouptest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int):
@@ -69,11 +69,10 @@ def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], tim
                     continue
                 elif msg.is_out_failed():
                     addr = msg.account.get_config("addr")
-                    reason = msg.error
+                    reason = parse_msg(msg.get_message_info()).get("error")
                     if reason is None:
                         reason = "unspecified msg.error - see log output"
                     print("%s: sending failed - %s" % (addr, reason))
-                    print(msg.get_message_info())
                     output.submit_filetest_result(addr, reason, [])
                 else:
                     messages.append(msg)

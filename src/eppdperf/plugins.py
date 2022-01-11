@@ -154,6 +154,8 @@ def parse_msg(text: str, firsthop=None) -> dict:
             response["begin"] = float(line.partition(" ")[2])
         if line.startswith("Sender: "):
             response["sender"] = line.partition(" ")[2]
+        if line.startswith("Error: "):
+            response["error"] = line.partition(" ")[2]
         if line.startswith("Hop: "):
             response["hops"].append(line.partition(" ")[2])
     if response.get("received") and response.get("sent"):
