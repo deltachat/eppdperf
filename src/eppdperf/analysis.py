@@ -26,7 +26,10 @@ def grouptest(spac: deltachat.Account, output, accounts: [deltachat.Account], ti
     group.send_text("Sender: spider\nBegin: %s" % (str(begin),))
 
     # The test accounts send messages to the group in the background; see plugins.TestPlugin.ac_incoming_message
-    output.groupmsgs_completed.wait(timeout=timeout)
+    try:
+        output.groupmsgs_completed.wait(timeout=timeout)
+    except KeyboardInterrupt:
+        print("Test interrupted.")
 
     group_members = []
     for ac in accounts:
@@ -60,7 +63,7 @@ def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], tim
     try:
         output.filetest_completed.wait(timeout=timeout)
     except KeyboardInterrupt:
-        print("Test aborted. File test sending failed for: ")
+        print("Test interrupted. File test sending failed for: ")
         for ac in accounts:
             addr = ac.get_config("addr")
             try:

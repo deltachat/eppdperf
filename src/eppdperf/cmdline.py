@@ -145,7 +145,10 @@ def main():
             recnums = list(range(rec[0], 100, rec[1]))
         else:
             raise ValueError("option does not use more than two args")
-        recipientstest(spac, output, accounts, args.timeout, recnums)
+        try:
+            recipientstest(spac, output, accounts, args.timeout, recnums)
+        except KeyboardInterrupt:
+            print("Test interrupted.")
 
     shutdown_accounts(args, accounts, spac)
     output.write()
