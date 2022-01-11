@@ -68,10 +68,13 @@ def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], tim
                 if msg.is_out_delivered():
                     continue
                 elif msg.is_out_failed():
+                    addr = msg.account.get_config("addr")
                     reason = msg.error
                     if reason is None:
                         reason = "unspecified msg.error - see log output"
-                    output.submit_filetest_result(msg.account.get_config("addr"), reason, [])
+                    print("%s: sending failed - %s" % (addr, reason))
+                    print(msg.get_message_info())
+                    output.submit_filetest_result(addr, reason, [])
                 else:
                     messages.append(msg)
             messages_to_wait = messages
