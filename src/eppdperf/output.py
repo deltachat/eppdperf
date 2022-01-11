@@ -39,7 +39,7 @@ class Output:
         if len(self.accounts) == self.num_accounts:
             self.logins_completed.set()
 
-    def submit_filetest_result(self, addr: str, sendduration: float, hops: list):
+    def submit_filetest_result(self, addr: str, sendduration: str, hops: list):
         """Submit to output how long the file sending test took. Notifies main thread when all tests are complete.
 
         :param addr: the email address which successfully sent the file
@@ -142,7 +142,7 @@ class Output:
             lines.append(["sent %s file (in seconds):" % (self.filesize,)])
             for addr in self.accounts:
                 try:
-                    lines[1].append(str(self.sending[addr]))
+                    lines[1].append(self.sending[addr])
                 except KeyError:
                     lines[1].append("timeout")
             row = 0

@@ -15,23 +15,26 @@ class Plugin:
         self.classtype = classtype
 
     @deltachat.account_hookimpl
-    # better wait for connectivity_changed FFI event
     def ac_configure_completed(self, success):
+        addr = self.account.get_config("addr")
         if success:
             self.account.start_io()
             while lib.dc_get_connectivity(self.account._dc_context) < 3000:
                 time.sleep(0.1)
             duration = time.time() - self.begin
             print("%s: %s: successful login as %s in %.1f seconds." %
-                  (len(self.output.accounts)+1, self.account.get_self_contact().addr, self.classtype, duration))
-            self.output.submit_login_result(self.account.get_self_contact().addr, duration)
+                  (len(self.output.accounts)+1, addr, self.classtype, duration))
+            if self.classtype == "test account":
+                self.output.submit_login_result(addr, duration)
         else:
             print("Login failed for %s with password:\n%s" %
                   (self.account.get_config("addr"), self.account.get_config("mail_pw")))
+            if self.classtype == "test account":
+                self.output.submit_login_result(addr, "login failed")
 
     @deltachat.account_hookimpl
     def ac_process_ffi_event(self, ffi_event):
-        """Log all errors and warnings to SDTOUT
+        """Log all errors and warnings to STDOUT
 
         :param ffi_event: deltachat.events.FFIEvent
         """
@@ -75,7 +78,11 @@ class TestPlugin(Plugin):
             # message parsing
             selfaddr = message.account.get_config("addr")
             msgcontent = parse_msg(message.text)
-            duration = received - msgcontent.get("begin")
+            try:
+                duration = received - msgcontent.get("begin")
+            except TypeError:
+                print("[%s] error: incorrect message: begin is None" % (selfaddr,))
+                return
             author = msgcontent.get("sender")
             if author == "spider":
                 print("%s: joined group chat %s after %.1f seconds" % (selfaddr, message.chat.get_name(), duration))
@@ -114,20 +121,9 @@ class SpiderPlugin(Plugin):
                   (message.get_sender_contact().addr, testduration))
             return  # file was sent before test started
         hops = parse_msg(message.get_message_info())["hops"]
-        self.output.submit_filetest_result(message.get_sender_contact().addr, testduration, hops)
+        self.output.submit_filetest_result(message.get_sender_contact().addr, str(testduration), hops)
         print("%s: %s: test message took %.1f seconds to spider." %
               (len(self.output.sending), message.get_sender_contact().addr, testduration))
-
-    @deltachat.account_hookimpl
-    def ac_configure_completed(self, success):
-        if success:
-            self.account.start_io()
-            duration = time.time() - self.begin
-            print("%s: successful login as spider in %.1f seconds." %
-                  (self.account.get_self_contact().addr, duration))
-        else:
-            print("Login failed for %s with password:\n%s" %
-                  (self.account.get_config("addr"), self.account.get_config("mail_pw")))
 
 
 def parse_msg(text: str) -> dict:

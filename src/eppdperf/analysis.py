@@ -57,11 +57,24 @@ def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], tim
     # send file test
     print("Sending %s test file to spider from all accounts:" % (get_file_size(testfile),))
     begin = time.time()
-    for ac in accounts:
-        send_test_file(spac, ac, testfile)
+    messages_to_wait = [send_test_file(spac, ac, testfile) for ac in accounts]
     # wait until finished, or timeout
     try:
-        output.filetest_completed.wait(timeout=timeout)
+        while time.time() < begin + timeout:
+            if output.filetest_completed.wait(timeout=1):
+                break
+            messages = []
+            for msg in messages_to_wait:
+                if msg.is_out_delivered():
+                    continue
+                elif msg.is_out_failed():
+                    reason = msg.error
+                    if reason is None:
+                        reason = "unspecified msg.error - see log output"
+                    output.submit_filetest_result(msg.account.get_config("addr"), reason, [])
+                else:
+                    messages.append(msg)
+            messages_to_wait = messages
     except KeyboardInterrupt:
         print("Test interrupted. File test sending failed for: ")
         for ac in accounts:
@@ -225,8 +238,14 @@ def logintest(spider: dict, credentials: [dict], args, output) -> (deltachat.Acc
     if time.time() > begin + args.timeout:
         print("Timeout reached. Not configured:")
     for account in tried_accounts:
-        if lib.dc_get_connectivity(account._dc_context) < 3000:
-            print(account.get_config("addr"))
+        # give each account 5 seconds to show signs of a connection:
+        i = 10
+        while lib.dc_get_connectivity(account._dc_context) < 3000:
+            if i == 0:
+                print("%s: %s" % (account.get_config("addr"), lib.dc_get_connectivity(account._dc_context)))
+                break
+            time.sleep(0.5)
+            i -= 1
         else:
             accounts.append(account)
     print("Successfully logged in to %s accounts." % (len(accounts),))
@@ -282,12 +301,13 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> del
     return ac
 
 
-def send_test_file(spac: deltachat.Account, account: deltachat.Account, testfile: str):
+def send_test_file(spac: deltachat.Account, account: deltachat.Account, testfile: str) -> deltachat.Message:
     """Send the test file to spider.
 
     :param spac: spider account the file is sent to.
     :param account: test account which sends the file
     :param testfile: absolute path to test file, the default is 15 MB large
+    :return the sent message
    """
     chat = account.create_chat(spac)
     # this is a bit early, yes, but with a 15 MB file on my system the delay was only 0.02 seconds.
@@ -297,6 +317,7 @@ def send_test_file(spac: deltachat.Account, account: deltachat.Account, testfile
     shutil.copy(testfile, newfilepath)
     message = chat.prepare_message_file(newfilepath)
     chat.send_prepared(message)
+    return message
 
 
 def get_file_size(testfile: str) -> str:
