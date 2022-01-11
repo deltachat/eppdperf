@@ -22,8 +22,8 @@ class Plugin:
             while lib.dc_get_connectivity(self.account._dc_context) < 3000:
                 time.sleep(0.1)
             duration = time.time() - self.begin
-            print("%s: successful login as %s in %.1f seconds." %
-                  (self.account.get_self_contact().addr, self.classtype, duration))
+            print("%s: %s: successful login as %s in %.1f seconds." %
+                  (len(self.output.accounts)+1, self.account.get_self_contact().addr, self.classtype, duration))
             self.output.submit_login_result(self.account.get_self_contact().addr, duration)
         else:
             print("Login failed for %s with password:\n%s" %

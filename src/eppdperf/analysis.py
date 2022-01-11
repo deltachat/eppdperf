@@ -217,7 +217,10 @@ def logintest(spider: dict, credentials: [dict], args, output) -> (deltachat.Acc
         except AssertionError:
             print("this line doesn't contain valid addr and app_pw: %s" %
                   (entry["line"],))
-    output.logins_completed.wait(timeout=args.timeout)
+    try:
+        output.logins_completed.wait(timeout=args.timeout)
+    except KeyboardInterrupt:
+        print("Login interrupted before all test accounts could login. Not logged in:")
     accounts = []
     if time.time() > begin + args.timeout:
         print("Timeout reached. Not configured:")
