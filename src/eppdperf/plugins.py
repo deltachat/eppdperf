@@ -120,20 +120,24 @@ class SpiderPlugin(Plugin):
             print("spider received outdated file test message from %s after %s seconds." %
                   (message.get_sender_contact().addr, testduration))
             return  # file was sent before test started
-        hops = parse_msg(message.get_message_info())["hops"]
+        hops = parse_msg(message.get_message_info(), firsthop=message.time_sent)["hops"]
+        hops.append(datetime.datetime.strftime(message.time_received, "Received: %Y.%m.%d %H:%M:%S UTC"))
         self.output.submit_filetest_result(message.get_sender_contact().addr, str(testduration), hops)
         print("%s: %s: test message took %.1f seconds to spider." %
               (len(self.output.sending), message.get_sender_contact().addr, testduration))
 
 
-def parse_msg(text: str) -> dict:
+def parse_msg(text: str, firsthop=None) -> dict:
     """Parse data out of a message.
 
     :param text: a string containing the message info of a deltachat.message.
+    :param firsthop: if you want to get hops, you can pass a msg.sent naive datetime object
     :return: a dictionary with different values parse from the message info.
     """
     lines = text.splitlines()
     response = {"hops": list()}
+    if firsthop:
+        response["hops"].append(datetime.datetime.strftime(firsthop, "Sent: %Y.%m.%d %H:%M:%S UTC"))
     for line in lines:
         if line.startswith("TestDuration: "):
             response["testduration"] = float(line.partition(" ")[2])
