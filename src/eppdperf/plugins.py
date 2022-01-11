@@ -109,9 +109,14 @@ class SpiderPlugin(Plugin):
         # get time_sent from attachment filename - hacky, I know
         sent = float(os.path.basename(message.filename))
         testduration = received - sent
+        if sent < self.begin:
+            print("spider received outdated file test message from %s after %s seconds." %
+                  (message.get_sender_contact().addr, testduration))
+            return  # file was sent before test started
         hops = parse_msg(message.get_message_info())["hops"]
         self.output.submit_filetest_result(message.get_sender_contact().addr, testduration, hops)
-        print("%s: test message took %.1f seconds to spider." % (message.get_sender_contact().addr, testduration))
+        print("%s: %s: test message took %.1f seconds to spider." %
+              (len(self.output.sending), message.get_sender_contact().addr, testduration))
 
     @deltachat.account_hookimpl
     def ac_configure_completed(self, success):
