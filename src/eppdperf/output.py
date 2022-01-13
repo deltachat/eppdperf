@@ -122,9 +122,15 @@ class Output:
             lines[0].append(addr.split("@")[1])
 
         if self.command == "login":
+            i = 1
+            if len(self.setups) != 0:
+                lines.append(["time for first configuration (in seconds):"])
+                for addr in self.accounts:
+                    lines[i].append(str(self.setups[addr]))
+                i += 1
             lines.append(["time to login (in seconds):"])
             for addr in self.accounts:
-                lines[1].append(str(self.logins[addr]))
+                lines[i].append(str(self.logins[addr]))
 
         if self.command == "server":
             lines.append(["IMAP QUOTA:"])
