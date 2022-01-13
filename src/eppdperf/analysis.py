@@ -223,15 +223,17 @@ def logintest(spider: dict, credentials: [dict], args, output) -> (deltachat.Acc
     :param output: output object
     :return: the spider and test accounts
     """
-    spac = setup_account(output, spider, args.data_dir, SpiderPlugin, args.debug, args.timeout)
+    spac = setup_account(output, spider, args.data_dir, SpiderPlugin,
+                         args.debug in spider["addr"], args.timeout)
     accounts = []
     for entry in credentials:
-        acc = setup_account(output, entry, args.data_dir, TestPlugin, args.debug, args.timeout)
+        debug = args.debug in entry["addr"]
+        acc = setup_account(output, entry, args.data_dir, TestPlugin, debug, args.timeout)
         accounts.append(acc)
     return spac, accounts
 
 
-def setup_account(output, entry: dict, data_dir: str, plugin, debug: str, timeout: int) -> deltachat.Account:
+def setup_account(output, entry: dict, data_dir: str, plugin, debug: bool, timeout: int) -> deltachat.Account:
     """Creates a Delta Chat account for a given credentials dictionary.
 
     :param output: the Output object which takes care of the results
@@ -239,20 +241,22 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str, timeou
         passed to this script
     :param entry: a dictionary with at least an "addr" and a "app_pw" key
     :param plugin: a plugin class which the bot will use
-    :param debug: email address to debug
+    :param debug: True if you want to see logging events for this account
     """
-    assert entry.get("addr") and entry.get("app_pw")
+
+    addr = entry["addr"]
+    app_pw = entry["app_pw"]
 
     begin = time.time()
 
     try:
-        os.mkdir(os.path.join(data_dir, entry["addr"]))
+        os.mkdir(os.path.join(data_dir, addr))
     except FileExistsError:
         pass
-    db_path = os.path.join(data_dir, entry["addr"], "db.sqlite")
+    db_path = os.path.join(data_dir, addr, "db.sqlite")
 
     ac = deltachat.Account(db_path)
-    if entry.get("addr") == debug:
+    if debug:
         ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
     plug = plugin(ac, output, begin)
     ac.add_account_plugin(plug)
@@ -273,6 +277,7 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str, timeou
     ac.set_config("sentbox_watch", "0")
     ac.set_config("bot", "1")
     ac.set_config("mdns_enabled", "0")
+
     if not ac.is_configured():
         begin = time.time()
         configtracker = ac.configure()

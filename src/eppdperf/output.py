@@ -43,7 +43,6 @@ class Output:
         :param addr: the email address which successfully logged in
         :param duration: seconds how long the login took
         """
-        self.accounts.append(addr)
         self.setups[addr] = duration
 
     def submit_filetest_result(self, addr: str, sendduration: str, hops: list):

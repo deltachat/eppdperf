@@ -102,14 +102,14 @@ def main():
     parser.add_argument("-v", "--debug", type=str, default="",
                         help="show deltachat logs for specific account")
     parser.add_argument("-s", "--select", type=str, default="",
-                        help="run the test only with one selected account")
+                        help="run the test only for the first address matching the select arg")
     parser.add_argument("-m", "--max_recipients", type=str, default="100,100,5",
                         help="send to specified number of recipients. if comma-sepaerated, it specifies a start number and the second value is a step wise increase")
     args = parser.parse_args()
 
     credentials, spider = parse_accounts_file(args.accounts_file)
     for entry in credentials:
-        if entry["addr"] == args.select:
+        if args.select in entry["addr"]:
             credentials = [entry]
             break
 
