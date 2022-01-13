@@ -277,7 +277,8 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> del
     ac = deltachat.Account(db_path)
     if entry.get("addr") == debug:
         ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
-    ac.add_account_plugin(plugin(ac, output, begin))
+    plug = plugin(ac, output, begin)
+    ac.add_account_plugin(plug)
     if not ac.is_configured():
         ac.set_config("addr", entry["addr"])
     ac.set_config("mail_pw", entry["app_pw"])
@@ -295,10 +296,19 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> del
     ac.set_config("sentbox_watch", "0")
     ac.set_config("bot", "1")
     ac.set_config("mdns_enabled", "0")
-    reconfigure = ac.is_configured()
-    configtracker = ac.configure(reconfigure=reconfigure)
-    if plugin is SpiderPlugin:
-        configtracker.wait_finish()
+    if not ac.is_configured():
+        configtracker = ac.configure()
+        if plugin == SpiderPlugin:
+            configtracker.wait_finish()
+    else:
+        # account is not configured, let's measure login time
+        begin = time.time()
+        ac.start_io()
+        plug.imap_connected.wait(timeout=30) # XXX
+        duration = time.time() - begin
+        if plugin == TestPlugin:
+            output.submit_login_result(entry["addr"], duration)
+
     ac.output = output
     return ac
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import argparse
 import tempfile
 from typing import Tuple
@@ -122,6 +123,9 @@ def main():
     if args.data_dir is None:
         tempdir = tempfile.TemporaryDirectory(prefix="perfanal")
         args.data_dir = tempdir.name
+    elif not os.path.exists(args.data_dir):
+        os.mkdir(args.data_dir)
+
     print("Storing account data in %s" % (args.data_dir,))
 
     spac, accounts = logintest(spider, credentials, args, output)
