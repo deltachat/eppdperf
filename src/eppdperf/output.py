@@ -173,7 +173,7 @@ class Output:
                 if addr not in self.groupadd:
                     lines[1].append("timeout")
                     continue
-                lines[1].append(str(self.groupadd[addr]))
+                lines[1].append("%.2f" % (self.groupadd[addr],))
 
             i = len(lines)
             for addr in self.accounts:
