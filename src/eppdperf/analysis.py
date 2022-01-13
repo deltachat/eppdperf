@@ -223,38 +223,15 @@ def logintest(spider: dict, credentials: [dict], args, output) -> (deltachat.Acc
     :param output: output object
     :return: the spider and test accounts
     """
-    spac = setup_account(output, spider, args.data_dir, SpiderPlugin, args.debug)
-    tried_accounts = []
-    begin = time.time()
-    for entry in credentials:
-        try:
-            tried_accounts.append(setup_account(output, entry, args.data_dir, TestPlugin, args.debug))
-        except AssertionError:
-            print("this line doesn't contain valid addr and app_pw: %s" %
-                  (entry["line"],))
-    try:
-        output.logins_completed.wait(timeout=args.timeout)
-    except KeyboardInterrupt:
-        print("Login interrupted before all test accounts could login. Not logged in:")
+    spac = setup_account(output, spider, args.data_dir, SpiderPlugin, args.debug, args.timeout)
     accounts = []
-    if time.time() > begin + args.timeout:
-        print("Timeout reached. Not configured:")
-    for account in tried_accounts:
-        # give each account 5 seconds to show signs of a connection:
-        i = 10
-        while lib.dc_get_connectivity(account._dc_context) < 3000:
-            if i == 0:
-                print("%s: %s" % (account.get_config("addr"), lib.dc_get_connectivity(account._dc_context)))
-                break
-            time.sleep(0.5)
-            i -= 1
-        else:
-            accounts.append(account)
-    print("Successfully logged in to %s accounts." % (len(accounts),))
+    for entry in credentials:
+        acc = setup_account(output, entry, args.data_dir, TestPlugin, args.debug, args.timeout)
+        accounts.append(acc)
     return spac, accounts
 
 
-def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> deltachat.Account:
+def setup_account(output, entry: dict, data_dir: str, plugin, debug: str, timeout: int) -> deltachat.Account:
     """Creates a Delta Chat account for a given credentials dictionary.
 
     :param output: the Output object which takes care of the results
@@ -297,19 +274,33 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> del
     ac.set_config("bot", "1")
     ac.set_config("mdns_enabled", "0")
     if not ac.is_configured():
-        configtracker = ac.configure()
-        if plugin == SpiderPlugin:
-            configtracker.wait_finish()
-    else:
-        # account is configured, let's measure login time
         begin = time.time()
-        ac.start_io()
-        plug.imap_connected.wait(timeout=30) # XXX
+        configtracker = ac.configure()
+        try:
+            configtracker.wait_finish(timeout=timeout)
+        except ConfigureFailed as e:
+            print("configuration setup failed for %s with password:\n%s" %
+                  (self.account.get_config("addr"), self.account.get_config("mail_pw")))
+            raise
+
         duration = time.time() - begin
-        addr = entry["addr"]
+        addr = ac.get_config("addr")
+        print("%s: %s: successful configuration setup as %s in %.1f seconds." %
+              (len(output.accounts)+1, addr, plug.classtype, duration))
         if plugin == TestPlugin:
-            output.submit_login_result(addr, duration)
-            print("%s: successful login as %s in %.1f seconds." %
+            output.submit_setup_result(addr, duration)
+
+    # account is configured, let's measure login time
+    ac.stop_io()
+    plug.imap_connected.clear()
+    begin = time.time()
+    ac.start_io()
+    plug.imap_connected.wait(timeout=timeout)
+    duration = time.time() - begin
+    addr = entry["addr"]
+    if plugin == TestPlugin:
+        output.submit_login_result(addr, duration)
+        print("%s: successful login as %s in %.1f seconds." %
                 (len(output.accounts), addr, duration))
 
     ac.output = output

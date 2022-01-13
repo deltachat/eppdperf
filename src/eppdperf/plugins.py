@@ -17,23 +17,6 @@ class Plugin:
         self.imap_connected = threading.Event()
         self.classtype = classtype
 
-    @deltachat.account_hookimpl
-    def ac_configure_completed(self, success):
-        addr = self.account.get_config("addr")
-        if success:
-            self.account.start_io()
-            while lib.dc_get_connectivity(self.account._dc_context) < 3000:
-                time.sleep(0.1)
-            duration = time.time() - self.begin
-            print("%s: %s: successful configuration setup as %s in %.1f seconds." %
-                  (len(self.output.accounts)+1, addr, self.classtype, duration))
-            output_res = str(duration)
-        else:
-            print("configuration setup failed for %s with password:\n%s" %
-                  (self.account.get_config("addr"), self.account.get_config("mail_pw")))
-            output_res = "login failed"
-        if self.classtype == "test account":
-            self.output.submit_login_result(addr, output_res)
 
     @deltachat.account_hookimpl
     def ac_process_ffi_event(self, ffi_event):

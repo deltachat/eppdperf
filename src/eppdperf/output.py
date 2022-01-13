@@ -14,6 +14,7 @@ class Output:
         self.overwrite = args.yes
         self.accounts = []
         self.logins = {}
+        self.setups = {}
         self.sending = {}
         self.groupadd = {}
         self.groupmsgs = {}
@@ -22,7 +23,6 @@ class Output:
         self.quotas = {}
         self.condstore = {}
         self.num_accounts = num_accounts
-        self.logins_completed = Event()
         self.groupadd_completed = Event()
         self.filetest_completed = Event()
         self.groupmsgs_completed = Event()
@@ -36,8 +36,15 @@ class Output:
         self.accounts.append(addr)
         self.logins[addr] = duration
         self.groupmsgs[addr] = {}
-        if len(self.accounts) == self.num_accounts:
-            self.logins_completed.set()
+
+    def submit_setup_result(self, addr: str, duration: float):
+        """Submit to output how long the login took. Notifies main thread when all logins are complete.
+
+        :param addr: the email address which successfully logged in
+        :param duration: seconds how long the login took
+        """
+        self.accounts.append(addr)
+        self.setups[addr] = duration
 
     def submit_filetest_result(self, addr: str, sendduration: str, hops: list):
         """Submit to output how long the file sending test took. Notifies main thread when all tests are complete.
