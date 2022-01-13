@@ -301,13 +301,16 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: str) -> del
         if plugin == SpiderPlugin:
             configtracker.wait_finish()
     else:
-        # account is not configured, let's measure login time
+        # account is configured, let's measure login time
         begin = time.time()
         ac.start_io()
         plug.imap_connected.wait(timeout=30) # XXX
         duration = time.time() - begin
+        addr = entry["addr"]
         if plugin == TestPlugin:
-            output.submit_login_result(entry["addr"], duration)
+            output.submit_login_result(addr, duration)
+            print("%s: successful login as %s in %.1f seconds." %
+                (len(output.accounts), addr, duration))
 
     ac.output = output
     return ac
