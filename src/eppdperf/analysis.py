@@ -1,5 +1,6 @@
 import deltachat
 from deltachat.capi import lib
+from deltachat.tracker import ConfigureFailed
 import time
 import os
 import shutil
@@ -289,7 +290,7 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: bool, timeo
             configtracker.wait_finish(timeout=timeout)
         except ConfigureFailed as e:
             print("configuration setup failed for %s with password:\n%s" %
-                  (self.account.get_config("addr"), self.account.get_config("mail_pw")))
+                  (ac.get_config("addr"), ac.get_config("mail_pw")))
             raise
 
         duration = time.time() - begin
