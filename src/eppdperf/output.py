@@ -145,7 +145,7 @@ class Output:
             for i, cap in enumerate(TESTED_CAPABILITIES):
                 lines.append([cap])
                 for addr in self.accounts:
-                    lines[i+2].append(self.capabilities[addr][cap])
+                    lines[i+2].append(int(self.capabilities[addr][cap]))
 
         if self.command == "recipients":
             lines.append(["maximum recipients:"])
