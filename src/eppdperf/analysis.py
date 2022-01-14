@@ -1,5 +1,6 @@
+import socket
+
 import deltachat
-from deltachat.capi import lib
 from deltachat.tracker import ConfigureFailed
 import time
 import os
@@ -12,7 +13,7 @@ from .plugins import SpiderPlugin, TestPlugin, parse_msg
 from deltachat.tracker import ConfigureFailed
 
 
-TESTED_CAPABILITIES = ("CONDSTORE", "IDLE", "UIDPLUS", "MOVE", "COMPRESS", "QRESYNC")
+TESTED_CAPABILITIES = ("IDLE", "CONDSTORE", "QRESYNC", "COMPRESS=DEFLATE", "UIDPLUS", "MOVE")
 
 
 def grouptest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int):
@@ -186,8 +187,6 @@ def get_smtpconn(ac: deltachat.Account) -> smtplib.SMTP_SSL:
     else:
         raise ValueError("Failed to connect: can not determine configured_send_security %s for %s" %
                          (ac.get_config("configured_send_security"), ac.get_config("addr")))
-        # smtpconn = smtplib.SMTP(host=ac.get_config("configured_mail_server"),
-        #                         port=int(ac.get_config("configured_send_port")))
     smtpconn.login(ac.get_config("addr"), ac.get_config("mail_pw"))
     return smtpconn
 
@@ -216,7 +215,11 @@ def servercapabilitiestest(output, accounts: [deltachat.Account]):
     :param accounts: test accounts
     """
     for ac in accounts:
-        imapconn = imapclient.IMAPClient(host=ac.get_config("configured_mail_server"))
+        try:
+            imapconn = imapclient.IMAPClient(host=ac.get_config("configured_mail_server"))
+        except socket.gaierror:
+            print("Could not connect to " + ac.get_config("configured_mail_server"))
+            continue
         imapconn.login(ac.get_config("addr"), ac.get_config("mail_pw"))
         results = [x.decode("ascii") for x in imapconn.capabilities()]
         for cond in TESTED_CAPABILITIES:
@@ -355,7 +358,7 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: bool, timeo
     if plugin == TestPlugin:
         output.submit_login_result(addr, duration)
         print("%s: successful login as %s in %.1f seconds." %
-                (len(output.accounts), addr, duration))
+            (len(output.accounts), addr, duration))
 
     ac.output = output
     return ac
