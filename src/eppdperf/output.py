@@ -2,6 +2,9 @@ import os
 from threading import Event
 
 
+from .analysis import TESTED_CAPABILITIES
+
+
 class Output:
     """This class tracks the test results and writes them to file. It also sets events when a test is completed.
 
@@ -21,7 +24,7 @@ class Output:
         self.hops = {}
         self.recipients = {}
         self.quotas = {}
-        self.condstore = {}
+        self.capabilities = {}
         self.num_accounts = num_accounts
         self.groupadd_completed = Event()
         self.filetest_completed = Event()
@@ -73,12 +76,14 @@ class Output:
         """
         self.quotas[addr] = quota
 
-    def submit_condstore_result(self, addr: str):
-        """Submit to output if mailserver supports CONDSTORE
+    def submit_capability_result(self, addr: str, capability: str, supported: bool):
+        """Submit to output if imap server supports the capability
 
         :param addr: the email address with the CONDSTORE result
+        :param capability: the capability that is supported
         """
-        self.condstore[addr] = "Supported"
+        caps = self.capabilities.setdefault(addr, {})
+        caps[capability] = supported
 
     def submit_groupadd_result(self, addr: str, duration: float):
         """Submit to output how long the group add took. Notifies main thread when all test accounts are in the group.
@@ -134,13 +139,13 @@ class Output:
 
         if self.command == "server":
             lines.append(["IMAP QUOTA:"])
-            lines.append(["CONDSTORE:"])
             for addr in self.accounts:
                 lines[1].append(self.quotas[addr])
-                try:
-                    lines[2].append(self.condstore[addr])
-                except KeyError:
-                    lines[2].append("Not Supported")
+
+            for i, cap in enumerate(TESTED_CAPABILITIES):
+                lines.append([cap])
+                for addr in self.accounts:
+                    lines[i+2].append(self.capabilities[addr][cap])
 
         if self.command == "recipients":
             lines.append(["maximum recipients:"])
@@ -202,7 +207,7 @@ class Output:
 
         # print output
         for i in range(len(lines)):
-            lines[i] = ", ".join(lines[i])
+            lines[i] = ", ".join(map(str, lines[i]))
         out = "\n".join(lines)
         print("Test results in csv format:")
         print(out)

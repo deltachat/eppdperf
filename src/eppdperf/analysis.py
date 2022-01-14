@@ -10,6 +10,9 @@ from email.mime.text import MIMEText
 from .plugins import SpiderPlugin, TestPlugin, parse_msg
 
 
+TESTED_CAPABILITIES = ("CONDSTORE", "IDLE", "UIDPLUS", "MOVE")
+
+
 def grouptest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int):
     """Add all test accounts to a group; all test accounts then write to it; wait until test complete or timeout.
 
@@ -170,10 +173,11 @@ def servercapabilitiestest(output, accounts: [deltachat.Account]):
     for ac in accounts:
         imapconn = imapclient.IMAPClient(host=ac.get_config("configured_mail_server"))
         imapconn.login(ac.get_config("addr"), ac.get_config("mail_pw"))
-        results = imapconn.capabilities()
-        if b"CONDSTORE" in results:
-            output.submit_condstore_result(ac.get_config("addr"))
-        if b"QUOTA" in results:
+        results = [x.decode("ascii") for x in imapconn.capabilities()]
+        for cond in TESTED_CAPABILITIES:
+            output.submit_capability_result(ac.get_config("addr"), cond, cond in results)
+
+        if "QUOTA" in results:
             try:
                 quotaint = imapconn.get_quota()[0].limit
             except IndexError:
