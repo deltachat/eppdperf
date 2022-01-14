@@ -61,16 +61,18 @@ class TestPlugin(Plugin):
             # if it's a device message or mailing list, we don't need to look at it.
             return
 
+        selfaddr = message.account.get_config("addr")
+        sender = message.get_sender_contact().addr
+        # message parsing
+        msgcontent = parse_msg(message.text)
+        try:
+            duration = received - msgcontent.get("begin")
+        except TypeError:
+            print("[%s] error: incorrect message: begin is None" % (selfaddr,))
+            return
+
         # group add test
         if message.chat.is_group():
-            # message parsing
-            selfaddr = message.account.get_config("addr")
-            msgcontent = parse_msg(message.text)
-            try:
-                duration = received - msgcontent.get("begin")
-            except TypeError:
-                print("[%s] error: incorrect message: begin is None" % (selfaddr,))
-                return
             author = msgcontent.get("sender")
             if author == "spider":
                 print("%s: joined group chat %s after %.1f seconds" % (selfaddr, message.chat.get_name(), duration))
@@ -82,6 +84,10 @@ class TestPlugin(Plugin):
                     print("%s received message from %s after %.1f seconds" %
                           (selfaddr, author, duration))
                     self.output.submit_groupmsg_result(selfaddr, author, duration)
+
+        # interop test
+        if msgcontent.get("test") == "interop":
+            self.output.submit_interop_result(selfaddr, sender, duration)
 
 
 class SpiderPlugin(Plugin):
@@ -147,6 +153,8 @@ def parse_msg(text: str, firsthop=None) -> dict:
             response["error"] = line.partition(" ")[2]
         if line.startswith("Hop: "):
             response["hops"].append(line.partition(" ")[2])
+        if line.startswith("Test: "):
+            response["test"] = line.partition(" ")[2]
     if response.get("received") and response.get("sent"):
         response["tdelta"] = (receiveddt - sentdt).total_seconds()
     return response

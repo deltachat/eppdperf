@@ -12,7 +12,7 @@ from .plugins import SpiderPlugin, TestPlugin, parse_msg
 from deltachat.tracker import ConfigureFailed
 
 
-TESTED_CAPABILITIES = ("CONDSTORE", "IDLE", "UIDPLUS", "MOVE")
+TESTED_CAPABILITIES = ("CONDSTORE", "IDLE", "UIDPLUS", "MOVE", "COMPRESS", "QRESYNC")
 
 
 def grouptest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int):
@@ -70,20 +70,27 @@ def interoptest(output, accounts: [deltachat.Account], timeout: int):
             chat = sender.create_chat(receiver)
             # avoid receiver seeing the sender as a contact request
             receiver.create_chat(sender)
-            msg = chat.send_text("Hello. can you read me?")
+            begin = time.time()
+            msg = chat.send_text("Begin: %s\nTest: interop" % (begin,))
             sent_messages.append(msg)
 
-    print("sent %s messages out, waiting %s seconds" % (len(sent_messages), timeout))
-    time.sleep(timeout)
+    print("Sent out %s messages, waiting %s seconds" % (len(sent_messages), timeout))
+    try:
+        time.sleep(timeout)
+    except KeyboardInterrupt:
+        print("Interrupted Timeout.")
 
     for msg in sent_messages:
+        receiver = msg.chat.get_name()
+        sender = msg.get_sender_contact().addr
         if msg.is_out_delivered():
             status = "ok"
         elif msg.is_out_failed():
             status = parse_msg(msg.get_message_info())["error"]
+            output.submit_interop_result(receiver, sender, status)
         else:
             status = "???"
-        print("%s -> %s %s" % (msg.get_sender_contact().addr, msg.chat.get_name(), status))
+        print("%s -> %s %s" % (sender, receiver, status))
 
 
 def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int, testfile: str):

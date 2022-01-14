@@ -21,6 +21,7 @@ class Output:
         self.sending = {}
         self.groupadd = {}
         self.groupmsgs = {}
+        self.interop = {}
         self.hops = {}
         self.recipients = {}
         self.quotas = {}
@@ -99,7 +100,7 @@ class Output:
         """Submit to output how long a group message took. Notifies main thread when all test messages arrived.
 
         :param addr: the email address which received the group message
-        :param sender: the email addres which sent the group message
+        :param sender: the email address which sent the group message
         :param duration: seconds how long the message took
         """
         self.groupmsgs[addr][sender] = duration
@@ -107,6 +108,16 @@ class Output:
             if len(self.groupmsgs[receiver]) != len(self.accounts) - 1:
                 return
         self.groupmsgs_completed.set()
+
+    def submit_interop_result(self, receiver: str, sender: str, duration: str):
+        """Submit to output how long an interop message took. Alternatively, submit error.
+
+        :param receiver: the email address which received the test message
+        :param sender: the email address which sent the test message
+        :param duration: how long the message took in seconds; alternatively, the error message.
+        """
+        d = self.interop.setdefault(receiver, {})
+        d[sender] = duration
 
     def store_file_size(self, filesize: str):
         """Store file size in Output object. Insert file size into output file name
@@ -131,11 +142,11 @@ class Output:
             if len(self.setups) != 0:
                 lines.append(["time for first configuration (in seconds):"])
                 for addr in self.accounts:
-                    lines[i].append(str(self.setups[addr]))
+                    lines[i].append(self.setups[addr])
                 i += 1
             lines.append(["time to login (in seconds):"])
             for addr in self.accounts:
-                lines[i].append(str(self.logins[addr]))
+                lines[i].append(self.logins[addr])
 
         if self.command == "server":
             lines.append(["IMAP QUOTA:"])
@@ -195,7 +206,7 @@ class Output:
                         lines[i].append("self")
                         continue
                     try:
-                        lines[i].append(str(groupresults[ac]))
+                        lines[i].append(groupresults[ac])
                     except KeyError:
                         lines[i].append("timeout")
                 i += 1
