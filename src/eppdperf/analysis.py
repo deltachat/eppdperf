@@ -76,22 +76,19 @@ def interoptest(output, accounts: [deltachat.Account], timeout: int):
             sent_messages.append(msg)
 
     print("Sent out %s messages, waiting %s seconds" % (len(sent_messages), timeout))
+    begin = time.time()
     try:
-        time.sleep(timeout)
+        while not output.interop_completed.is_set() and time.time() < begin + timeout:
+            pending_messages = sent_messages.copy()
+            for msg in pending_messages:
+                if msg.is_out_failed():
+                    receiver = msg.chat.get_name()
+                    sender = msg.get_sender_contact().addr
+                    status = parse_msg(msg.get_message_info())["error"]
+                    output.submit_interop_result(receiver, sender, status)
+                    sent_messages.remove(msg)
     except KeyboardInterrupt:
         print("Interrupted Timeout.")
-
-    for msg in sent_messages:
-        receiver = msg.chat.get_name()
-        sender = msg.get_sender_contact().addr
-        if msg.is_out_delivered():
-            status = "ok"
-        elif msg.is_out_failed():
-            status = parse_msg(msg.get_message_info())["error"]
-            output.submit_interop_result(receiver, sender, status)
-        else:
-            status = "???"
-        print("%s -> %s %s" % (sender, receiver, status))
 
 
 def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int, testfile: str):

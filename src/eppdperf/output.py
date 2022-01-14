@@ -30,6 +30,7 @@ class Output:
         self.groupadd_completed = Event()
         self.filetest_completed = Event()
         self.groupmsgs_completed = Event()
+        self.interop_completed = Event()
 
     def submit_login_result(self, addr: str, duration: float):
         """Submit to output how long the login took. Notifies main thread when all logins are complete.
@@ -118,6 +119,17 @@ class Output:
         """
         d = self.interop.setdefault(receiver, {})
         d[sender] = duration
+        try:
+            print("%s -> %s: %.2f seconds" % (sender, receiver, float(duration)))
+        except ValueError:
+            print("[ERROR] %s -> %s\n%s" % (sender, receiver, duration))
+            d[sender] = duration.replace(",", " ").replace(";", ".").replace("\n", " ")
+        for rec in self.accounts:
+            if self.interop.get(rec) is None:
+                return
+            if len(self.interop[rec]) < len(self.accounts) - 1:
+                return
+        self.interop_completed.set()
 
     def store_file_size(self, filesize: str):
         """Store file size in Output object. Insert file size into output file name
@@ -237,7 +249,7 @@ class Output:
                         sender_results.append(self.interop[receiver][sender])
                     except KeyError:
                         pass
-                lines[i].append(str(len(sender_results) / (len(self.accounts) - 1) * 100) + "%")
+                lines[i].append(str(int(len(sender_results) / (len(self.accounts) - 1) * 100)) + "%")
             lines.append(["received messages from other providers:"])
             for receiver in self.accounts:
                 try:

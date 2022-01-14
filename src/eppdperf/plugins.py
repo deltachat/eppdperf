@@ -66,6 +66,8 @@ class TestPlugin(Plugin):
         # message parsing
         msgcontent = parse_msg(message.text)
         try:
+            if msgcontent.get("begin") < self.begin:
+                return  # message was sent before test began
             duration = received - msgcontent.get("begin")
         except TypeError:
             print("[%s] error: incorrect message: begin is None" % (selfaddr,))
@@ -108,7 +110,11 @@ class SpiderPlugin(Plugin):
 
         received = (message.time_received - datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)).total_seconds()
         # get time_sent from attachment filename - hacky, I know
-        sent = float(os.path.basename(message.filename))
+        try:
+            sent = float(os.path.basename(message.filename))
+        except ValueError:
+            print("[ERROR] plugins.py:114 Could not convert message.filename to float: " + message.filename)
+            return
         testduration = received - sent
         if sent < self.begin:
             print("spider received outdated file test message from %s after %s seconds." %
@@ -150,7 +156,8 @@ def parse_msg(text: str, firsthop=None) -> dict:
         if line.startswith("Sender: "):
             response["sender"] = line.partition(" ")[2]
         if line.startswith("Error: "):
-            response["error"] = line.partition(" ")[2]
+            firsthalf = text.partition("Error:")[2]
+            response["error"] = firsthalf.partition("Message-ID: Mr.")[0]
         if line.startswith("Hop: "):
             response["hops"].append(line.partition(" ")[2])
         if line.startswith("Test: "):
