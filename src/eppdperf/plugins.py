@@ -9,12 +9,13 @@ import deltachat
 class Plugin:
     """Parent class for all plugins"""
 
-    def __init__(self, account, output, begin, classtype):
+    def __init__(self, account, output, begin, classtype, quiet):
         self.account = account
         self.output = output
         self.begin = begin
         self.imap_connected = threading.Event()
         self.classtype = classtype
+        self.quiet = quiet
 
 
     @deltachat.account_hookimpl
@@ -26,6 +27,8 @@ class Plugin:
         if ffi_event.name == "DC_EVENT_IMAP_CONNECTED":
             self.imap_connected.set()
 
+        if self.quiet:
+            return  # suppress log output
         logmsg = str(ffi_event)
         if "ERROR" in logmsg or "WARNING" in logmsg:
             if "Ignoring nested protected headers" in logmsg:
@@ -48,8 +51,8 @@ class TestPlugin(Plugin):
     :param output: Output object
     """
 
-    def __init__(self, account: deltachat.Account, output, begin, classtype="test account"):
-        super().__init__(account, output, begin, classtype)
+    def __init__(self, account: deltachat.Account, output, begin, classtype="test account", quiet=False):
+        super().__init__(account, output, begin, classtype, quiet)
         self.group = ""
 
     @deltachat.account_hookimpl
@@ -70,7 +73,8 @@ class TestPlugin(Plugin):
                 return  # message was sent before test began
             duration = received - msgcontent.get("begin")
         except TypeError:
-            print("[%s] error: incorrect message: begin is None" % (selfaddr,))
+            if not self.quiet:
+                print("[%s] error: incorrect message: begin is None" % (selfaddr,))
             return
 
         # group add test
@@ -99,8 +103,8 @@ class SpiderPlugin(Plugin):
     :param output: Output object
     """
 
-    def __init__(self, account: deltachat.Account, output, begin, classtype="spider"):
-        super().__init__(account, output, begin, classtype)
+    def __init__(self, account: deltachat.Account, output, begin, classtype="spider", quiet=False):
+        super().__init__(account, output, begin, classtype, quiet)
 
     @deltachat.account_hookimpl
     def ac_incoming_message(self, message: deltachat.Message):
@@ -113,12 +117,14 @@ class SpiderPlugin(Plugin):
         try:
             sent = float(os.path.basename(message.filename))
         except ValueError:
-            print("[ERROR] plugins.py:114 Could not convert message.filename to float: " + message.filename)
+            if not self.quiet:
+                print("[ERROR] plugins.py:114 Could not convert message.filename to float: " + message.filename)
             return
         testduration = received - sent
         if sent < self.begin:
-            print("spider received outdated file test message from %s after %s seconds." %
-                  (message.get_sender_contact().addr, testduration))
+            if not self.quiet:
+                print("spider received outdated file test message from %s after %s seconds." %
+                      (message.get_sender_contact().addr, testduration))
             return  # file was sent before test started
         tzone = datetime.datetime.now().tzinfo
         hops = parse_msg(message.get_message_info(), firsthop=message.time_sent.astimezone(tzone).isoformat())["hops"]

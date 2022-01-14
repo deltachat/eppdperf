@@ -273,16 +273,16 @@ def logintest(spider: dict, credentials: [dict], args, output) -> (deltachat.Acc
     :return: the spider and test accounts
     """
     spac = setup_account(output, spider, args.data_dir, SpiderPlugin,
-                         args.debug in spider["addr"], args.timeout)
+                         args.debug in spider["addr"], args.timeout, args.quiet)
     accounts = []
     for entry in credentials:
         debug = args.debug in entry["addr"]
-        acc = setup_account(output, entry, args.data_dir, TestPlugin, debug, args.timeout)
+        acc = setup_account(output, entry, args.data_dir, TestPlugin, debug, args.timeout, args.quiet)
         accounts.append(acc)
     return spac, accounts
 
 
-def setup_account(output, entry: dict, data_dir: str, plugin, debug: bool, timeout: int) -> deltachat.Account:
+def setup_account(output, entry: dict, data_dir: str, plugin, debug: bool, timeout: int, quiet: bool) -> deltachat.Account:
     """Creates a Delta Chat account for a given credentials dictionary.
 
     :param output: the Output object which takes care of the results
@@ -291,6 +291,7 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: bool, timeo
     :param entry: a dictionary with at least an "addr" and a "app_pw" key
     :param plugin: a plugin class which the bot will use
     :param debug: True if you want to see logging events for this account
+    :param quiet: whether warnings should be printed
     """
 
     addr = entry["addr"]
@@ -307,11 +308,11 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: bool, timeo
     ac = deltachat.Account(db_path)
     if debug:
         ac.add_account_plugin(deltachat.events.FFIEventLogger(ac))
-    plug = plugin(ac, output, begin)
+    plug = plugin(ac, output, begin, quiet=quiet)
     ac.add_account_plugin(plug)
     if not ac.is_configured():
-        ac.set_config("addr", entry["addr"])
-    ac.set_config("mail_pw", entry["app_pw"])
+        ac.set_config("addr", addr)
+    ac.set_config("mail_pw", app_pw)
 
     for name in ("send_server", "mail_server", "mail_port", "mail_security", "send_port", "send_security"):
         val = entry.get(name)
@@ -338,7 +339,6 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: bool, timeo
             raise
 
         duration = time.time() - begin
-        addr = ac.get_config("addr")
         print("%s: %s: successful configuration setup as %s in %.1f seconds." %
               (len(output.accounts)+1, addr, plug.classtype, duration))
         if plugin == TestPlugin:
@@ -351,11 +351,10 @@ def setup_account(output, entry: dict, data_dir: str, plugin, debug: bool, timeo
     ac.start_io()
     plug.imap_connected.wait(timeout=timeout)
     duration = time.time() - begin
-    addr = entry["addr"]
     if plugin == TestPlugin:
         output.submit_login_result(addr, duration)
         print("%s: successful login as %s in %.1f seconds." %
-            (len(output.accounts), addr, duration))
+              (len(output.accounts), addr, duration))
 
     ac.output = output
     return ac

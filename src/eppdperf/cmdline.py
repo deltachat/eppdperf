@@ -108,6 +108,7 @@ def main():
                         help="run the test only for the first address matching the select arg")
     parser.add_argument("-m", "--max_recipients", type=str, default="100,100,5",
                         help="send to specified number of recipients. if comma-sepaerated, it specifies a start number and the second value is a step wise increase")
+    parser.add_argument("-q", "--quiet", action="store_true", help="suppress deltachat warnings etc.")
     args = parser.parse_args()
 
     credentials, spider = parse_accounts_file(args.accounts_file)
