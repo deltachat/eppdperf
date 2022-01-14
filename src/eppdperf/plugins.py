@@ -38,7 +38,7 @@ class Plugin:
                 return
             if "failed to fetch all uids: got 0" in logmsg:
                 return
-            print("[%s] %s" % (self.account.get_config("addr"), logmsg))
+            #print("[%s] %s" % (self.account.get_config("addr"), logmsg))
 
 
 class TestPlugin(Plugin):

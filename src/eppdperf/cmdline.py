@@ -8,8 +8,11 @@ from datetime import datetime
 from random import getrandbits
 
 from .output import Output
-from .analysis import grouptest, filetest, recipientstest, servercapabilitiestest, logintest, \
+from .analysis import (
+    interoptest, grouptest, filetest, recipientstest,
+    servercapabilitiestest, logintest,
     shutdown_accounts, get_file_size
+)
 
 
 def parse_config_line(line: str):
@@ -85,7 +88,7 @@ def generate_file_from_int(filesizeint: int) -> tempfile.NamedTemporaryFile:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["login", "group", "file", "recipients", "server"],
+    parser.add_argument("command", choices=["login", "group", "interop", "file", "recipients", "server"],
                         help="Which test to perform")
     parser.add_argument("-y", "--yes", action="store_true", default=False,
                         help="always answer yes if prompted")
@@ -133,15 +136,18 @@ def main():
     if args.command == "group":
         grouptest(spac, output, accounts, args.timeout)
 
-    if args.command == "file":
+    elif args.command == "interop":
+        interoptest(output, accounts, args.timeout)
+
+    elif args.command == "file":
         testfile = generate_file_from_string(args.filesize)
         output.store_file_size(get_file_size(testfile.name))
         filetest(spac, output, accounts, args.timeout, testfile.name)
 
-    if args.command == "server":
+    elif args.command == "server":
         servercapabilitiestest(output, accounts)
 
-    if args.command == "recipients":
+    elif args.command == "recipients":
         rec = [int(x) for x in args.max_recipients.strip().split(",")]
         if len(rec) == 1:
             recnums = [rec[0]]

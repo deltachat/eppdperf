@@ -9,6 +9,7 @@ import smtplib
 import ssl
 from email.mime.text import MIMEText
 from .plugins import SpiderPlugin, TestPlugin, parse_msg
+from deltachat.tracker import ConfigureFailed
 
 
 TESTED_CAPABILITIES = ("CONDSTORE", "IDLE", "UIDPLUS", "MOVE")
@@ -47,6 +48,42 @@ def grouptest(spac: deltachat.Account, output, accounts: [deltachat.Account], ti
         for ac in accounts:
             if ac not in group_members:
                 print(ac.get_self_contact().addr)
+
+
+def interoptest(output, accounts: [deltachat.Account], timeout: int):
+    """send a message from each account to all other accounts.
+
+    :param output: Output object which gathers the test results
+    :param accounts: test accounts
+    :param timeout: timeout in seconds
+    """
+
+    sent_messages = []
+
+    for sender in accounts:
+        print("sending messages from %s to %d other accounts" %
+              (sender.get_config("addr"), len(accounts) - 1))
+
+        for receiver in accounts:
+            if sender == receiver:
+                continue
+            chat = sender.create_chat(receiver)
+            # avoid receiver seeing the sender as a contact request
+            receiver.create_chat(sender)
+            msg = chat.send_text("Hello. can you read me?")
+            sent_messages.append(msg)
+
+    print("sent %s messages out, waiting %s seconds" % (len(sent_messages), timeout))
+    time.sleep(timeout)
+
+    for msg in sent_messages:
+        if msg.is_out_delivered():
+            status = "ok"
+        elif msg.is_out_failed():
+            status = parse_msg(msg.get_message_info())["error"]
+        else:
+            status = "???"
+        print("%s -> %s %s" % (msg.get_sender_contact().addr, msg.chat.get_name(), status))
 
 
 def filetest(spac: deltachat.Account, output, accounts: [deltachat.Account], timeout: int, testfile: str):
