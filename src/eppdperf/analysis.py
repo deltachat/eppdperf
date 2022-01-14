@@ -205,7 +205,7 @@ def send_smtp_msg(smtpconn: smtplib.SMTP_SSL, spac: deltachat.Account, ac: delta
     smtpconn.send_message(msg)
 
 
-def servercapabilitiestest(output, accounts: [deltachat.Account]):
+def featurestest(output, accounts: [deltachat.Account]):
     """Find out the IMAP Quota for all test accounts
 
     :param output: Output object which gathers the test results

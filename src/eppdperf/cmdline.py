@@ -10,7 +10,7 @@ from random import getrandbits
 from .output import Output
 from .analysis import (
     interoptest, grouptest, filetest, recipientstest,
-    servercapabilitiestest, logintest,
+    featurestest, logintest,
     shutdown_accounts, get_file_size
 )
 
@@ -88,7 +88,7 @@ def generate_file_from_int(filesizeint: int) -> tempfile.NamedTemporaryFile:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["login", "group", "interop", "file", "recipients", "server"],
+    parser.add_argument("command", choices=["login", "group", "interop", "file", "recipients", "features"],
                         help="Which test to perform")
     parser.add_argument("-y", "--yes", action="store_true", default=False,
                         help="always answer yes if prompted")
@@ -119,7 +119,7 @@ def main():
     if args.output is None:
         args.output = "results/%s-%s.csv" % (args.command, datetime.now().strftime("%Y-%m-%d"))
     output = Output(args, len(credentials))
-    if args.command != "server":
+    if args.command != "features":
         assert spider is not None, "most tests need a spider echobot account to run"
 
     # ensuring account data directory
@@ -144,8 +144,8 @@ def main():
         output.store_file_size(get_file_size(testfile.name))
         filetest(spac, output, accounts, args.timeout, testfile.name)
 
-    elif args.command == "server":
-        servercapabilitiestest(output, accounts)
+    elif args.command == "features":
+        featurestest(output, accounts)
 
     elif args.command == "recipients":
         rec = [int(x) for x in args.max_recipients.strip().split(",")]

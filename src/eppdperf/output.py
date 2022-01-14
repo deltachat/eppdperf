@@ -160,7 +160,7 @@ class Output:
             for addr in self.accounts:
                 lines[i].append(self.logins[addr])
 
-        if self.command == "server":
+        if self.command == "features":
             lines.append(["IMAP QUOTA:"])
             for addr in self.accounts:
                 lines[1].append(self.quotas[addr])
