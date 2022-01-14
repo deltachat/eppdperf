@@ -216,6 +216,37 @@ class Output:
                 percentage = int((len(self.groupmsgs.get(addr)) / (len(self.groupmsgs) - 1) * 100))
                 lines[i].append(str(percentage) + "%")
 
+        if self.command == "interop":
+            i = 1
+            for receiver in self.accounts:
+                lines.append(["Received by %s:" % (receiver,)])
+                for sender in self.accounts:
+                    if sender == receiver:
+                        lines[i].append("self")
+                    else:
+                        try:
+                            lines[i].append(self.interop[receiver][sender])
+                        except KeyError:
+                            lines[i].append("timeout")
+                i += 1
+            lines.append(["could send messages to other providers:"])
+            for sender in self.accounts:
+                sender_results = []
+                for receiver in self.interop:
+                    try:
+                        sender_results.append(self.interop[receiver][sender])
+                    except KeyError:
+                        pass
+                lines[i].append(str(len(sender_results) / (len(self.accounts) - 1) * 100) + "%")
+            lines.append(["received messages from other providers:"])
+            for receiver in self.accounts:
+                try:
+                    percentage = int((len(self.interop[receiver]) / (len(self.accounts) - 1) * 100))
+                except KeyError:
+                    percentage = 0
+                lines[i+1].append(str(percentage) + "%")
+
+
         # print output
         for i in range(len(lines)):
             lines[i] = ", ".join(map(str, lines[i]))
