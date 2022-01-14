@@ -246,18 +246,25 @@ class Output:
                 sender_results = []
                 for receiver in self.interop:
                     try:
+                        float(self.interop[receiver][sender])
                         sender_results.append(self.interop[receiver][sender])
                     except KeyError:
+                        pass
+                    except ValueError:
                         pass
                 lines[i].append(str(int(len(sender_results) / (len(self.accounts) - 1) * 100)) + "%")
             lines.append(["received messages from other providers:"])
             for receiver in self.accounts:
-                try:
-                    percentage = int((len(self.interop[receiver]) / (len(self.accounts) - 1) * 100))
-                except KeyError:
-                    percentage = 0
-                lines[i+1].append(str(percentage) + "%")
-
+                receiver_results = []
+                for sender in self.interop[receiver]:
+                    try:
+                        float(self.interop[receiver][sender])
+                        receiver_results.append(self.interop[receiver][sender])
+                    except KeyError:
+                        pass
+                    except ValueError:
+                        pass
+                lines[i+1].append(str(int((len(receiver_results) / (len(self.accounts) - 1) * 100))) + "%")
 
         # print output
         for i in range(len(lines)):
