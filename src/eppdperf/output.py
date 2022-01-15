@@ -259,7 +259,7 @@ class Output:
             lines.append(["received messages from other providers:"])
             for receiver in self.accounts:
                 receiver_results = []
-                for sender in self.interop[receiver]:
+                for sender in self.interop.get(receiver):
                     try:
                         float(self.interop[receiver][sender])
                         receiver_results.append(self.interop[receiver][sender])
