@@ -154,7 +154,10 @@ class Output:
             if len(self.setups) != 0:
                 lines.append(["time for first configuration (in seconds):"])
                 for addr in self.accounts:
-                    lines[i].append(self.setups[addr])
+                    try:
+                        lines[i].append(self.setups[addr])
+                    except KeyError:
+                        lines[i].append("already configured")
                 i += 1
             lines.append(["time to login (in seconds):"])
             for addr in self.accounts:
