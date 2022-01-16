@@ -104,7 +104,7 @@ def main():
                         help="size of the test file, randomly generated")
     parser.add_argument("-v", "--debug", type=str, default="dz0n3zu98q3ud982qufm982uf98u2f0982f",
                         help="show deltachat logs for specific account")
-    parser.add_argument("-s", "--select", type=str, default="dz0n3zu98q3ud982qufm982uf98u2f0982f",
+    parser.add_argument("-s", "--select", type=str, default="",
                         help="run the test only for the first address matching the select arg")
     parser.add_argument("-m", "--max_recipients", type=str, default="100,100,5",
                         help="send to specified number of recipients. if comma-sepaerated, it specifies a start number and the second value is a step wise increase")
@@ -112,10 +112,13 @@ def main():
     args = parser.parse_args()
 
     credentials, spider = parse_accounts_file(args.accounts_file)
-    for entry in credentials:
-        if args.select in entry["addr"]:
-            credentials = [entry]
-            break
+    if args.command != "interop":
+        if args.select == "":
+            args.select = "dz0n3zu98q3ud982qufm982uf98u2f0982f"
+        for entry in credentials:
+            if args.select in entry["addr"]:
+                credentials = [entry]
+                break
 
     if args.output is None:
         args.output = "results/%s-%s.csv" % (args.command, datetime.now().strftime("%Y-%m-%d"))
@@ -138,7 +141,7 @@ def main():
         grouptest(spac, output, accounts, args.timeout)
 
     elif args.command == "interop":
-        interoptest(output, accounts, args.timeout)
+        interoptest(output, accounts, args.timeout, args.select)
 
     elif args.command == "file":
         testfile = generate_file_from_string(args.filesize)

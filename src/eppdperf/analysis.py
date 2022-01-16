@@ -51,17 +51,19 @@ def grouptest(spac: deltachat.Account, output, accounts: [deltachat.Account], ti
                 print(ac.get_self_contact().addr)
 
 
-def interoptest(output, accounts: [deltachat.Account], timeout: int):
+def interoptest(output, accounts: [deltachat.Account], timeout: int, select):
     """send a message from each account to all other accounts.
 
     :param output: Output object which gathers the test results
     :param accounts: test accounts
     :param timeout: timeout in seconds
+    :param select: if -s is provided, only this account sends out
     """
-
     sent_messages = []
 
     for sender in accounts:
+        if select not in sender.get_config("addr"):
+            continue
         print("sending messages from %s to %d other accounts" %
               (sender.get_config("addr"), len(accounts) - 1))
 
