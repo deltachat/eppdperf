@@ -153,6 +153,8 @@ class Output:
             try:
                 float(result)
                 success += 1
+            except ValueError:
+                continue
             except TypeError:
                 continue
         return (success / (len(self.accounts) - 1)) * 100
@@ -169,6 +171,8 @@ class Output:
                 float(results[result])
                 success += 1
             except ValueError:
+                continue
+            except TypeError:
                 continue
         return (success / (len(self.accounts) - 1)) * 100
 
