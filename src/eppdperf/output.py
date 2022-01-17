@@ -15,7 +15,9 @@ class Output:
         self.command = args.command
         self.outputfile = args.output
         self.overwrite = args.yes
+        self.select = args.select
         self.accounts = []
+        self.interop_senders = []
         self.logins = {}
         self.setups = {}
         self.sending = {}
@@ -126,9 +128,11 @@ class Output:
             d[sender] = duration.replace(",", " ").replace(";", ".").replace("\n", " ")
         for rec in self.accounts:
             if self.interop.get(rec) is None:
-                return
-            if len(self.interop[rec]) < len(self.accounts) - 1:
-                return
+                return  # no results for receiver yet
+            if rec not in self.interop_senders and len(self.interop[rec]) < len(self.interop_senders):
+                return  # receiver has not gotten message from all senders
+            if rec in self.interop_senders and len(self.interop[rec]) < len(self.interop_senders) - 1:
+                return  # receiver was also a sender, but hasn't gotten message from all other senders
         self.interop_completed.set()
 
     def store_file_size(self, filesize: str):

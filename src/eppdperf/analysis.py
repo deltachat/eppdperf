@@ -64,6 +64,7 @@ def interoptest(output, accounts: [deltachat.Account], timeout: int, select):
     for sender in accounts:
         if select not in sender.get_config("addr"):
             continue
+        output.interop_senders.append(sender.get_config("addr"))
         print("sending messages from %s to %d other accounts" %
               (sender.get_config("addr"), len(accounts) - 1))
 
