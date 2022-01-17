@@ -163,7 +163,7 @@ class Output:
                 continue
         return (success / (len(self.accounts) - 1)) * 100
 
-    def get_received_percentage(self, results: dict) -> float:
+    def get_received_percentage(self, receiver: str, results: dict) -> float:
         """Return the % of successfully received messages for a specific receiver.
 
         :param results: the results of the receiver
@@ -178,7 +178,12 @@ class Output:
                 continue
             except TypeError:
                 continue
-        return (success / (len(self.accounts) - 1)) * 100
+        if self.command == "interop" and receiver in self.interop_senders:
+            return (success / (len(self.interop_senders) - 1)) * 100
+        elif self.command == "interop" and receiver not in self.interop_senders:
+            return (success / (len(self.interop_senders))) * 100
+        else:
+            return (success / (len(self.accounts) - 1)) * 100
 
     def write(self):
         """Write the results to the output file.
@@ -186,8 +191,12 @@ class Output:
         lines = list()
 
         lines.append(["test accounts (by provider):"])
-        for addr in self.accounts:
-            lines[0].append(addr.split("@")[1])
+        if self.command == "interop":
+            for addr in self.interop_senders:
+                lines[0].append(addr.split("@")[1])
+        else:
+            for addr in self.accounts:
+                lines[0].append(addr.split("@")[1])
 
         if self.command == "login":
             i = 1
@@ -261,7 +270,7 @@ class Output:
             lines.append(["received messages from other providers:"])
             for receiver in self.accounts:
                 try:
-                    lines[i].append(str(self.get_received_percentage(self.groupmsgs[receiver])) + "%")
+                    lines[i].append(str(self.get_received_percentage(receiver, self.groupmsgs[receiver])) + "%")
                 except KeyError:
                     lines[i].append("0%")
 
@@ -282,7 +291,7 @@ class Output:
             i = 1
             for receiver in self.accounts:
                 lines.append(["Received by %s:" % (receiver,)])
-                for sender in self.accounts:
+                for sender in self.interop_senders:
                     if sender == receiver:
                         lines[i].append("self")
                     else:
@@ -292,12 +301,17 @@ class Output:
                             lines[i].append("timeout")
                 i += 1
             lines.append(["could send messages to other providers:"])
-            for sender in self.accounts:
+            for sender in self.interop_senders:
                 lines[i].append(str(self.get_sent_percentage(sender, self.interop)) + "%")
+            if len(self.accounts) > len(self.interop_senders):
+                lines.append(["test accounts which received messages:"])
+                i += 1
+                for receiver in self.accounts:
+                    lines[i].append(receiver.split("@")[1])
             lines.append(["received messages from other providers:"])
             for receiver in self.accounts:
                 try:
-                    lines[i+1].append(str(self.get_received_percentage(self.interop[receiver])) + "%")
+                    lines[i+1].append(str(self.get_received_percentage(receiver, self.interop[receiver])) + "%")
                 except KeyError:
                     lines[i + 1].append("0%")
 
