@@ -23,7 +23,7 @@ providers for compability with chat-over-email efforts.
 For the complete results see [the Delta Chat
 blog](https://delta.chat/en/2022-01-16-dapsi2blogpost).
 
-![An overview over the provider comparisons.](https://github.com/deltachat/deltachat-pages/tree/master/assets/blog/2022-01-19-eppd-table.png)
+![An overview over the provider comparisons.](https://github.com/deltachat/deltachat-pages/raw/master/assets/blog/2022-01-19-eppd-table.png)
 
 ## Setup
 
