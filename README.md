@@ -20,8 +20,8 @@ Measurement criteria are:
 These measurements are part of a broader effort to compare different email
 providers for compability with chat-over-email efforts.
 
-For the complete results see [the Delta Chat
-blog](https://delta.chat/en/2022-01-16-dapsi2blogpost).
+For the complete results see [the Delta Chat blog](https://delta.chat/en/2022-01-16-dapsi2blogpost).
+You can also view the [results in .ods](https://github.com/deltachat/eppdperf/blob/main/results/e-mail_provider_comparison.ods?raw=true).
 
 ![An overview over the provider comparisons.](https://github.com/deltachat/deltachat-pages/raw/master/assets/blog/2022-01-19-eppd-table.png)
 
