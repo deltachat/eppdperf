@@ -123,8 +123,6 @@ def main():
     if args.output is None:
         args.output = "results/%s-%s.csv" % (args.command, datetime.now().strftime("%Y-%m-%d"))
     output = Output(args, len(credentials))
-    if args.command != "features":
-        assert spider is not None, "most tests need a spider echobot account to run"
 
     # ensuring account data directory
     if args.data_dir is None:
@@ -138,12 +136,14 @@ def main():
     spac, accounts = logintest(spider, credentials, args, output)
 
     if args.command == "group":
+        assert spider is not None, "group test needs a spider echobot account to run"
         grouptest(spac, output, accounts, args.timeout)
 
     elif args.command == "interop":
         interoptest(output, accounts, args.timeout, args.select)
 
     elif args.command == "file":
+        assert spider is not None, "file test needs a spider echobot account to run"
         testfile = generate_file_from_string(args.filesize)
         output.store_file_size(get_file_size(testfile.name))
         filetest(spac, output, accounts, args.timeout, testfile.name)
@@ -152,6 +152,7 @@ def main():
         featurestest(output, accounts)
 
     elif args.command == "recipients":
+        assert spider is not None, "recipients test needs a spider echobot account to run"
         rec = [int(x) for x in args.max_recipients.strip().split(",")]
         if len(rec) == 1:
             recnums = [rec[0]]
