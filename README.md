@@ -14,6 +14,7 @@ Measurement criteria are:
 - Do servers support CONDSTORE for synchronizing read state between multi-clients
 - Do servers support IDLE for push notifications/instant messaging
 - How many recipients does a provider allow
+- Does a server add authentication results to the headers
 
 ## Qualitative Provider Comparisons
 
