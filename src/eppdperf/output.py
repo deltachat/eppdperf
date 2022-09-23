@@ -320,20 +320,21 @@ class Output:
                         except KeyError:
                             lines[i].append("timeout")
                 i += 1
-            lines.append(["could send messages to other providers:"])
-            for sender in self.interop_senders:
-                lines[i].append(str(self.get_sent_percentage(sender, self.interop)) + "%")
-            if len(self.accounts) > len(self.interop_senders):
-                lines.append(["test accounts which received messages:"])
-                i += 1
+            if self.command == "interop":
+                lines.append(["could send messages to other providers:"])
+                for sender in self.interop_senders:
+                    lines[i].append(str(self.get_sent_percentage(sender, self.interop)) + "%")
+                if len(self.accounts) > len(self.interop_senders):
+                    lines.append(["test accounts which received messages:"])
+                    i += 1
+                    for receiver in self.accounts:
+                        lines[i].append(receiver.split("@")[1])
+                lines.append(["received messages from other providers:"])
                 for receiver in self.accounts:
-                    lines[i].append(receiver.split("@")[1])
-            lines.append(["received messages from other providers:"])
-            for receiver in self.accounts:
-                try:
-                    lines[i+1].append(str(self.get_received_percentage(receiver, self.interop[receiver])) + "%")
-                except KeyError:
-                    lines[i + 1].append("0%")
+                    try:
+                        lines[i+1].append(str(self.get_received_percentage(receiver, self.interop[receiver])) + "%")
+                    except KeyError:
+                        lines[i + 1].append("0%")
 
         # print output
         for i in range(len(lines)):
