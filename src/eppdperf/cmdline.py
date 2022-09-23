@@ -88,8 +88,8 @@ def generate_file_from_int(filesizeint: int) -> tempfile.NamedTemporaryFile:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["login", "group", "interop", "file", "recipients", "features"],
-                        help="Which test to perform")
+    parser.add_argument("command", help="Which test to perform",
+                        choices=["login", "group", "interop", "file", "recipients", "features", "dkimchecks"])
     parser.add_argument("-y", "--yes", action="store_true", default=False,
                         help="always answer yes if prompted")
     parser.add_argument("-a", "--accounts_file", help="a file containing mail accounts",
@@ -112,7 +112,7 @@ def main():
     args = parser.parse_args()
 
     credentials, spider = parse_accounts_file(args.accounts_file)
-    if args.command != "interop":
+    if args.command != "interop" and args.command != "dkimchecks":
         if args.select == "":
             args.select = "dz0n3zu98q3ud982qufm982uf98u2f0982f"
         for entry in credentials:
@@ -141,6 +141,11 @@ def main():
 
     elif args.command == "interop":
         interoptest(output, accounts, args.timeout, args.select)
+
+    elif args.command == "dkimchecks":
+        for ac in accounts:
+            ac.set_config("save_mime_headers", 1)
+        interoptest(output, accounts, args.timeout, args.select, dkim_check=True)
 
     elif args.command == "file":
         assert spider is not None, "file test needs a spider echobot account to run"

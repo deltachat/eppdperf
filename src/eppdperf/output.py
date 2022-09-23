@@ -24,6 +24,7 @@ class Output:
         self.groupadd = {}
         self.groupmsgs = {}
         self.interop = {}
+        self.dkimchecks = {}
         self.hops = {}
         self.recipients = {}
         self.quotas = {}
@@ -43,6 +44,7 @@ class Output:
         self.accounts.append(addr)
         self.logins[addr] = duration
         self.groupmsgs[addr] = {}
+        self.dkimchecks[addr] = {}
 
     def submit_setup_result(self, addr: str, duration: float):
         """Submit to output how long the login took. Notifies main thread when all logins are complete.
@@ -111,6 +113,21 @@ class Output:
             if len(self.groupmsgs[receiver]) != len(self.accounts) - 1:
                 return
         self.groupmsgs_completed.set()
+
+    def submit_dkimchecks_result(self, receiver: str, sender: str, content: str):
+        """Submit to output the MIME headers of a received message. Notifies the main thread when all test messages arrived.
+
+        :param receiver: the email address which received the test message
+        :param sender: the email address which sent the test message
+        :param content: the MIME headers of the message
+        """
+        content_csv = content.replace(",", " ").replace(";", ".").replace("\n", " ")
+        self.dkimchecks[receiver][sender] = content_csv
+        print(content_csv)
+        for receiver in self.dkimchecks:
+            if len(self.dkimchecks[receiver]) != len(self.accounts) - 1:
+                return
+        self.interop_completed.set()
 
     def submit_interop_result(self, receiver: str, sender: str, duration: str):
         """Submit to output how long an interop message took. Alternatively, submit error.
@@ -191,7 +208,7 @@ class Output:
         lines = list()
 
         lines.append(["test accounts (by provider):"])
-        if self.command == "interop":
+        if self.command == "interop" or self.command == "dkimchecks":
             for addr in self.interop_senders:
                 lines[0].append(addr.split("@")[1])
         else:
@@ -287,7 +304,7 @@ class Output:
                     except KeyError:
                         lines[i].append("timeout")
 
-        if self.command == "interop":
+        if self.command == "interop" or self.command == "dkimchecks":
             i = 1
             for receiver in self.accounts:
                 lines.append(["Received by %s:" % (receiver,)])
@@ -296,7 +313,10 @@ class Output:
                         lines[i].append("self")
                     else:
                         try:
-                            lines[i].append(self.interop[receiver][sender])
+                            if self.command == "interop":
+                                lines[i].append(self.interop[receiver][sender])
+                            elif self.command == "dkimchecks":
+                                lines[i].append(self.dkimchecks[receiver][sender])
                         except KeyError:
                             lines[i].append("timeout")
                 i += 1

@@ -51,13 +51,14 @@ def grouptest(spac: deltachat.Account, output, accounts: [deltachat.Account], ti
                 print(ac.get_self_contact().addr)
 
 
-def interoptest(output, accounts: [deltachat.Account], timeout: int, select):
+def interoptest(output, accounts: [deltachat.Account], timeout: int, select, dkim_check=False):
     """send a message from each account to all other accounts.
 
     :param output: Output object which gathers the test results
     :param accounts: test accounts
     :param timeout: timeout in seconds
     :param select: if -s is provided, only this account sends out
+    :param dkim_check: if dkimchecks test is run, gather the MIME headers and send them to output
     """
     sent_messages = []
 
@@ -75,7 +76,10 @@ def interoptest(output, accounts: [deltachat.Account], timeout: int, select):
             # avoid receiver seeing the sender as a contact request
             receiver.create_chat(sender)
             begin = time.time()
-            msg = chat.send_text("Begin: %s\nTest: interop" % (begin,))
+            if dkim_check:
+                msg = chat.send_text("Begin: %s\nTest: dkimchecks" % (begin,))
+            else:
+                msg = chat.send_text("Begin: %s\nTest: interop" % (begin,))
             sent_messages.append(msg)
 
     print("Sent out %s messages, waiting %s seconds" % (len(sent_messages), timeout))

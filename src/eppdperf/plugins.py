@@ -95,6 +95,11 @@ class TestPlugin(Plugin):
         if msgcontent.get("test") == "interop":
             self.output.submit_interop_result(selfaddr, sender, duration)
 
+        # dkimchecks test
+        elif msgcontent.get("test") == "dkimchecks":
+            headers = message.get_mime_headers().as_string()
+            self.output.submit_dkimchecks_result(selfaddr, sender, headers)
+
 
 class SpiderPlugin(Plugin):
     """Plugin for the spider deltachat account.
