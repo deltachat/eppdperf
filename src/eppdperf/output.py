@@ -121,9 +121,8 @@ class Output:
         :param sender: the email address which sent the test message
         :param content: the MIME headers of the message
         """
-        content_csv = content.replace(",", " ").replace(";", ".").replace("\n", " ")
-        self.dkimchecks[receiver][sender] = content_csv
-        print(content_csv)
+        self.dkimchecks[receiver][sender] = content
+        print(content)
         for receiver in self.dkimchecks:
             if len(self.dkimchecks[receiver]) != len(self.accounts) - 1:
                 return
@@ -202,13 +201,39 @@ class Output:
         else:
             return (success / (len(self.accounts) - 1)) * 100
 
+    def write_directories(self):
+        """Write the results to a directory structure. """
+        try:
+            os.mkdir(self.outputfile)
+        except FileExistsError:
+            if not self.overwrite:
+                answer = input(self.outputfile + " already exists. Do you want to overwrite it? [Y/n] ")
+                if answer.lower() == "n":
+                    return
+            os.system("rm -r " + self.outputfile)
+            os.mkdir(self.outputfile)
+        print("Writing results to %s" % (self.outputfile,))
+
+        for receiver in self.accounts:
+            recfolder = "%s/%s/" % (self.outputfile, receiver)
+            os.mkdir(recfolder)
+            for sender in self.interop_senders:
+                if sender == receiver:
+                    pass
+                else:
+                    try:
+                        with open(recfolder + sender, "w+", encoding="utf-8") as f:
+                            f.write(self.dkimchecks[receiver][sender])
+                    except KeyError:
+                        print("timeout for mail from %s to %s" % (sender, receiver))
+
     def write(self):
         """Write the results to the output file.
         """
         lines = list()
 
         lines.append(["test accounts (by provider):"])
-        if self.command == "interop" or self.command == "dkimchecks":
+        if self.command == "interop":
             for addr in self.interop_senders:
                 lines[0].append(addr.split("@")[1])
         else:
@@ -304,7 +329,7 @@ class Output:
                     except KeyError:
                         lines[i].append("timeout")
 
-        if self.command == "interop" or self.command == "dkimchecks":
+        if self.command == "interop":
             i = 1
             for receiver in self.accounts:
                 lines.append(["Received by %s:" % (receiver,)])
@@ -313,28 +338,24 @@ class Output:
                         lines[i].append("self")
                     else:
                         try:
-                            if self.command == "interop":
-                                lines[i].append(self.interop[receiver][sender])
-                            elif self.command == "dkimchecks":
-                                lines[i].append(self.dkimchecks[receiver][sender])
+                            lines[i].append(self.interop[receiver][sender])
                         except KeyError:
                             lines[i].append("timeout")
                 i += 1
-            if self.command == "interop":
-                lines.append(["could send messages to other providers:"])
-                for sender in self.interop_senders:
-                    lines[i].append(str(self.get_sent_percentage(sender, self.interop)) + "%")
-                if len(self.accounts) > len(self.interop_senders):
-                    lines.append(["test accounts which received messages:"])
-                    i += 1
-                    for receiver in self.accounts:
-                        lines[i].append(receiver.split("@")[1])
-                lines.append(["received messages from other providers:"])
+            lines.append(["could send messages to other providers:"])
+            for sender in self.interop_senders:
+                lines[i].append(str(self.get_sent_percentage(sender, self.interop)) + "%")
+            if len(self.accounts) > len(self.interop_senders):
+                lines.append(["test accounts which received messages:"])
+                i += 1
                 for receiver in self.accounts:
-                    try:
-                        lines[i+1].append(str(self.get_received_percentage(receiver, self.interop[receiver])) + "%")
-                    except KeyError:
-                        lines[i + 1].append("0%")
+                    lines[i].append(receiver.split("@")[1])
+            lines.append(["received messages from other providers:"])
+            for receiver in self.accounts:
+                try:
+                    lines[i+1].append(str(self.get_received_percentage(receiver, self.interop[receiver])) + "%")
+                except KeyError:
+                    lines[i + 1].append("0%")
 
         # print output
         for i in range(len(lines)):
@@ -342,7 +363,7 @@ class Output:
         out = "\n".join(lines)
         print("Test results in csv format:")
         print(out)
-
+        # write to .csv output file
         try:
             f = open(self.outputfile, "x", encoding="utf-8")
         except FileExistsError:

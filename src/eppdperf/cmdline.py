@@ -171,7 +171,11 @@ def main():
             print("Test interrupted.")
 
     shutdown_accounts(args, accounts, spac)
-    output.write()
+
+    if args.command == "dkimchecks":
+        output.write_directories()
+    else:
+        output.write()
 
 
 if __name__ == "__main__":
