@@ -36,7 +36,7 @@ if __name__ == "__main__":
             eppdperf=eppdperf.cmdline:main
         ''',
         python_requires='>=3.7',
-        install_requires=['deltachat>=1.70'],
+        install_requires=['deltachat>=1.70', 'imapclient'],
         include_package_data=True,
         zip_safe=False,
     )
